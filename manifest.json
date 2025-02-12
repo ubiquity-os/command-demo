@@ -1,24 +1,12 @@
 {
-  "name": "ts-template",
-  "description": "ts-template for UbiquityOS plugins.",
-  "ubiquity:listeners": ["issue_comment.created", "pull_request_review_comment.created"],
+  "name": "plugin-demo",
+  "description": "Triggers a demo of the plugin capabilities.",
+  "ubiquity:listeners": ["issue_comment.created"],
   "commands": {
-    "hello": {
-      "ubiquity:example": "/hello argument",
-      "description": "Hello command with an argument."
+    "demo": {
+      "ubiquity:example": "/demo",
+      "description": "Triggers a demo of the plugin capabilities."
     }
   },
-  "configuration": {
-    "default": {},
-    "type": "object",
-    "properties": {
-      "configurableResponse": {
-        "default": "Hello, world!",
-        "type": "string"
-      },
-      "customStringsUrl": {
-        "type": "string"
-      }
-    }
-  }
+  "configuration": {}
 }

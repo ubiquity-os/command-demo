@@ -1,7 +1,7 @@
 {
   "name": "plugin-template",
   "version": "1.0.0",
-  "description": "Ubiquibot plugin template repository with TypeScript support.",
+  "description": "Ubiquity-os demo plugin.",
   "author": "Ubiquity DAO",
   "license": "MIT",
   "main": "src/worker.ts",
