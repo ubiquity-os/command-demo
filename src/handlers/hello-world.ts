@@ -1,4 +1,3 @@
-import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { Context } from "../types";
 
 async function setLabels({ payload, octokit }: Context) {
@@ -18,55 +17,72 @@ async function setLabels({ payload, octokit }: Context) {
   });
 }
 
-async function createPullRequest({ payload, octokit }: Context) {
-  const userOctokit = new customOctokit({
-    auth: "",
-  });
-  const repo = payload.repository.name;
-  const issueNumber = "issue" in payload ? payload.issue.number : payload.pull_request.number;
-  const owner = payload.repository.owner.login;
+async function createPullRequest({ payload, logger, userOctokit }: Context) {
+  const sourceRepo = payload.repository.name;
+  const sourceIssueNumber = "issue" in payload ? payload.issue.number : payload.pull_request.number;
+  const sourceOwner = payload.repository.owner.login;
 
-  const { data: repoData } = await octokit.rest.repos.get({
-    owner,
-    repo,
+  const { data: user } = await userOctokit.rest.users.getAuthenticated();
+  logger.info(`Creating fork for user: ${user.login}`);
+
+  await userOctokit.rest.repos.createFork({
+    owner: sourceOwner,
+    repo: sourceRepo,
+  });
+
+  logger.debug("Waiting for the fork to be ready...");
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  const { data: repoData } = await userOctokit.rest.repos.get({
+    owner: sourceOwner,
+    repo: sourceRepo,
   });
   const defaultBranch = repoData.default_branch;
-  const { data: refData } = await octokit.rest.git.getRef({
-    owner,
-    repo,
+  logger.debug("Repository data", { defaultBranch, repoUrl: repoData.html_url });
+  const { data: refData } = await userOctokit.rest.git.getRef({
+    owner: sourceOwner,
+    repo: sourceRepo,
     ref: `heads/${defaultBranch}`,
   });
   const ref = `fix/${crypto.randomUUID()}`;
 
-  await octokit.rest.git.createRef({
-    owner,
-    repo,
+  await userOctokit.rest.git.createRef({
+    owner: user.login,
+    repo: sourceRepo,
     ref: `refs/heads/${ref}`,
     sha: refData.object.sha,
   });
-  await octokit.rest.repos.createOrUpdateFileContents({
-    owner,
-    repo,
-    path: "test.txt",
-    message: "chore: update test.txt file",
-    content: Buffer.from(crypto.randomUUID()).toString("base64"),
-    branch: ref,
+  const { data: commit } = await userOctokit.rest.git.getCommit({
+    owner: user.login,
+    repo: sourceRepo,
+    commit_sha: refData.object.sha,
+  });
+  const { data: newCommit } = await userOctokit.rest.git.createCommit({
+    owner: user.login,
+    repo: sourceRepo,
+    message: "chore: empty commit",
+    tree: commit.tree.sha,
+    parents: [refData.object.sha],
+  });
+  await userOctokit.rest.git.updateRef({
+    owner: user.login,
+    repo: sourceRepo,
+    ref: `heads/${ref}`,
+    sha: newCommit.sha,
   });
   await userOctokit.rest.pulls.create({
-    owner,
-    repo,
-    head: ref,
+    owner: sourceOwner,
+    repo: sourceRepo,
+    head: `${user.login}:${ref}`,
     base: defaultBranch,
-    body: `Resolves #${issueNumber}`,
+    body: `Resolves #${sourceIssueNumber}`,
+    title: ref,
   });
 }
 
 export async function handleComment(context: Context) {
-  const { payload } = context;
+  const { payload, userOctokit } = context;
 
-  const userOctokit = new customOctokit({
-    auth: "",
-  });
   const repo = payload.repository.name;
   const issueNumber = "issue" in payload ? payload.issue.number : payload.pull_request.number;
   const owner = payload.repository.owner.login;
