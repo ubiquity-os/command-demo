@@ -70,7 +70,7 @@ async function createPullRequest({ payload, logger, userOctokit }: Context) {
     ref: `heads/${ref}`,
     sha: newCommit.sha,
   });
-  await userOctokit.rest.pulls.create({
+  return await userOctokit.rest.pulls.create({
     owner: sourceOwner,
     repo: sourceRepo,
     head: `${user.login}:${ref}`,
@@ -81,7 +81,7 @@ async function createPullRequest({ payload, logger, userOctokit }: Context) {
 }
 
 export async function handleComment(context: Context) {
-  const { payload, userOctokit } = context;
+  const { payload, userOctokit, octokit } = context;
 
   const repo = payload.repository.name;
   const issueNumber = "issue" in payload ? payload.issue.number : payload.pull_request.number;
@@ -102,6 +102,11 @@ export async function handleComment(context: Context) {
       issue_number: issueNumber,
       body: "/ask Can you help me solving this task by showing the code I should change?",
     });
-    await createPullRequest(context);
+    const pr = await createPullRequest(context);
+    await octokit.rest.pulls.merge({
+      owner,
+      repo,
+      pull_number: pr.data.number,
+    });
   }
 }
