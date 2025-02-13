@@ -28,6 +28,44 @@ async function isUserAdmin({ payload, octokit, logger }: Context) {
   return !!permissionLevel.data.user?.permissions?.admin;
 }
 
+async function createLabels({ octokit, payload, logger }: Context) {
+  const repo = payload.repository.name;
+  const owner = payload.repository.owner.login;
+
+  try {
+    await octokit.rest.issues.createLabel({
+      owner,
+      repo,
+      name: "Price: 50 USD",
+      color: "#1f883d",
+    });
+  } catch (error) {
+    logger.warn("Label Price already exist:", { error: error as Error });
+  }
+
+  try {
+    await octokit.rest.issues.createLabel({
+      owner,
+      repo,
+      name: "Time: <1 Hour",
+      color: "#ededed",
+    });
+  } catch (error) {
+    logger.warn("Label Time already exist:", { error: error as Error });
+  }
+
+  try {
+    await octokit.rest.issues.createLabel({
+      owner,
+      repo,
+      name: "Priority: 1 (Normal)",
+      color: "#ededed",
+    });
+  } catch (error) {
+    logger.warn("Label Priority already exist:", { error: error as Error });
+  }
+}
+
 async function setLabels({ payload, octokit }: Context) {
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
@@ -37,6 +75,16 @@ async function setLabels({ payload, octokit }: Context) {
     repo,
     issue_number: issueNumber,
   });
+  try {
+    await octokit.rest.issues.createLabel({
+      owner,
+      repo,
+      name: "Price: 50 USD",
+      color: "#1f883d",
+    });
+  } catch (error) {
+    console.log("Label might already exist:", error);
+  }
   await octokit.rest.issues.addLabels({
     owner,
     repo,
@@ -134,6 +182,7 @@ export async function handleComment(context: Context<"issue_comment.created" | "
     }
     logger.info("Processing /demo command");
     await openIssue(context);
+    await createLabels(context);
     await setLabels(context);
   } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(userName)) {
     logger.info("Processing ubiquity-os-command-start-stop post comment");
