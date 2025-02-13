@@ -141,18 +141,23 @@ export async function handleComment(context: Context<"issue_comment.created">) {
       repo,
       pull_number: pr.data.number,
     });
+    const issueNumber = payload.issue.number;
+    await octokit.rest.issues.addAssignees({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      assignees: [context.userName],
+    });
   }
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger, octokit } = context;
+  const { payload, userOctokit, logger } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
   const label = payload.label;
-
-  console.log(JSON.stringify(payload));
 
   if (label?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(repo)) {
     logger.info("Handle pricing label set", { label });
@@ -167,12 +172,6 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       repo,
       issue_number: issueNumber,
       body: "/ask Can you help me solving this task by showing the code I should change?",
-    });
-    await octokit.rest.issues.addAssignees({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      assignees: [context.userName],
     });
   } else {
     logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
