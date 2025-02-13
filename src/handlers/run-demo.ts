@@ -138,6 +138,8 @@ export async function handleLabel(context: Context<"issues.labeled">) {
   const owner = payload.repository.owner.login;
   const label = payload.label;
 
+  console.log(JSON.stringify(payload));
+
   if (label?.name.startsWith("Price") && payload.issue.assignee?.login === userName) {
     logger.info("Handle pricing label set", { label });
     await userOctokit.rest.issues.createComment({
