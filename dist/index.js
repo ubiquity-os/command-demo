@@ -31405,8 +31405,18 @@ async function isUserAdmin({ payload: e, octokit: t, logger: r }) {
     return true;
   } catch (t) {
     r.debug(`${s} is not a member of ${e.repository.owner.login}`, { e: t });
-    return false;
   }
+  const o = await t.rest.repos.getCollaboratorPermissionLevel({ username: s, owner: e.repository.owner.login, repo: e.repository.name });
+  const A = o.data.role_name?.toLowerCase();
+  r.debug(`Retrieved collaborator permission level for ${s}.`, {
+    username: s,
+    owner: e.repository.owner.login,
+    repo: e.repository.name,
+    isAdmin: o.data.user?.permissions?.admin,
+    role: A,
+    data: o.data,
+  });
+  return !!o.data.user?.permissions?.admin;
 }
 async function setLabels({ payload: e, octokit: t }) {
   const r = e.repository.name;
@@ -31447,7 +31457,7 @@ async function handleComment(e) {
   const i = t.repository.owner.login;
   if (A.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(e))) {
-      throw r.error("You are not an organization member thus cannot start a demo.");
+      throw r.error("You do not have admin privileges thus cannot start a demo.");
     }
     r.info("Processing /demo command");
     await openIssue(e);
@@ -31459,22 +31469,23 @@ async function handleComment(e) {
   }
 }
 async function handleLabel(e) {
-  const { payload: t, userOctokit: r, logger: s, userName: o } = e;
-  const A = t.repository.name;
-  const n = t.issue.number;
-  const i = t.repository.owner.login;
-  const a = t.label;
-  if (a?.name.startsWith("Price") && t.issue.assignee?.login === o) {
-    s.info("Handle pricing label set", { label: a });
-    await r.rest.issues.createComment({ owner: i, repo: A, issue_number: n, body: "/start" });
+  const { payload: t, userOctokit: r, logger: s } = e;
+  const o = t.repository.name;
+  const A = t.issue.number;
+  const n = t.repository.owner.login;
+  const i = t.label;
+  console.log(JSON.stringify(t));
+  if (i?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(o)) {
+    s.info("Handle pricing label set", { label: i });
+    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/start" });
     await r.rest.issues.createComment({
-      owner: i,
-      repo: A,
-      issue_number: n,
+      owner: n,
+      repo: o,
+      issue_number: A,
       body: "/ask Can you help me solving this task by showing the code I should change?",
     });
   } else {
-    s.info("Ignoring label change", { label: a, assignee: t.issue.assignee });
+    s.info("Ignoring label change", { label: i, assignee: t.issue.assignee, repo: o });
   }
 }
 function isCommentEvent(e) {
