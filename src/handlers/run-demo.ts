@@ -10,8 +10,22 @@ async function isUserAdmin({ payload, octokit, logger }: Context) {
     return true;
   } catch (e) {
     logger.debug(`${username} is not a member of ${payload.repository.owner.login}`, { e });
-    return false;
   }
+  const permissionLevel = await octokit.rest.repos.getCollaboratorPermissionLevel({
+    username,
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+  });
+  const role = permissionLevel.data.role_name?.toLowerCase();
+  logger.debug(`Retrieved collaborator permission level for ${username}.`, {
+    username,
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+    isAdmin: permissionLevel.data.user?.permissions?.admin,
+    role,
+    data: permissionLevel.data,
+  });
+  return !!permissionLevel.data.user?.permissions?.admin;
 }
 
 async function setLabels({ payload, octokit }: Context) {
