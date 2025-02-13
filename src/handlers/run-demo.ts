@@ -2,7 +2,7 @@ import { Context } from "../types";
 
 async function setLabels({ payload, octokit }: Context) {
   const repo = payload.repository.name;
-  const issueNumber = "issue" in payload ? payload.issue.number : payload.pull_request.number;
+  const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
   await octokit.rest.issues.removeAllLabels({
     owner,
@@ -13,13 +13,25 @@ async function setLabels({ payload, octokit }: Context) {
     owner,
     repo,
     issue_number: issueNumber,
-    labels: ["Priority: 1 (Normal)", "Time: <1 Hour", "Price: 12 USD"],
+    labels: ["Priority: 1 (Normal)", "Time: <1 Hour"],
+  });
+}
+
+async function openIssue({ octokit, payload }: Context): Promise<void> {
+  const repo = payload.repository.name;
+  const issueNumber = payload.issue.number;
+  const owner = payload.repository.owner.login;
+  await octokit.rest.issues.update({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    state: "open",
   });
 }
 
 async function createPullRequest({ payload, logger, userOctokit }: Context) {
   const sourceRepo = payload.repository.name;
-  const sourceIssueNumber = "issue" in payload ? payload.issue.number : payload.pull_request.number;
+  const sourceIssueNumber = payload.issue.number;
   const sourceOwner = payload.repository.owner.login;
 
   const { data: user } = await userOctokit.rest.users.getAuthenticated();
@@ -80,16 +92,26 @@ async function createPullRequest({ payload, logger, userOctokit }: Context) {
   });
 }
 
-export async function handleComment(context: Context) {
-  const { payload, userOctokit, octokit } = context;
+export async function handleComment(context: Context<"issue_comment.created">) {
+  const { payload } = context;
 
-  const repo = payload.repository.name;
-  const issueNumber = "issue" in payload ? payload.issue.number : payload.pull_request.number;
-  const owner = payload.repository.owner.login;
   const body = payload.comment.body;
 
   if (body.trim().startsWith("/demo")) {
+    await openIssue(context);
     await setLabels(context);
+  }
+}
+
+export async function handleLabel(context: Context<"issues.labeled">) {
+  const { payload, userOctokit, octokit } = context;
+
+  const repo = payload.repository.name;
+  const issueNumber = payload.issue.number;
+  const owner = payload.repository.owner.login;
+  const label = payload.label;
+
+  if (label?.name.startsWith("Price")) {
     await userOctokit.rest.issues.createComment({
       owner,
       repo,
