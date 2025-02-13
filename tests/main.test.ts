@@ -13,6 +13,7 @@ import { server } from "./__mocks__/node";
 import { STRINGS } from "./__mocks__/strings";
 
 dotenv.config();
+
 const octokit = new Octokit();
 
 beforeAll(() => {
