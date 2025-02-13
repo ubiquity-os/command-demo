@@ -41,7 +41,7 @@ async function setLabels({ payload, octokit }: Context) {
     owner,
     repo,
     issue_number: issueNumber,
-    labels: ["Priority: 1 (Normal)", "Time: <1 Hour"],
+    labels: ["Priority: 1 (Normal)", "Time: <1 Hour", "Price: 50 USD"],
   });
 }
 
