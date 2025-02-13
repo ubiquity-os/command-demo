@@ -131,7 +131,7 @@ export async function handleComment(context: Context<"issue_comment.created">) {
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger, userName } = context;
+  const { payload, userOctokit, logger } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
@@ -140,7 +140,7 @@ export async function handleLabel(context: Context<"issues.labeled">) {
 
   console.log(JSON.stringify(payload));
 
-  if (label?.name.startsWith("Price") && payload.issue.assignee?.login === userName) {
+  if (label?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(repo)) {
     logger.info("Handle pricing label set", { label });
     await userOctokit.rest.issues.createComment({
       owner,
@@ -155,6 +155,6 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       body: "/ask Can you help me solving this task by showing the code I should change?",
     });
   } else {
-    logger.info("Ignoring label change", { label, assignee: payload.issue.assignee });
+    logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
   }
 }
