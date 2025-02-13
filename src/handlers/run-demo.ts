@@ -119,12 +119,14 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   });
 }
 
-export async function handleComment(context: Context<"issue_comment.created">) {
-  const { payload, logger, octokit, userName } = context;
+export async function handleComment(context: Context<"issue_comment.created" | "issue_comment.edited">) {
+  const { eventName, payload, logger, octokit, userName, userOctokit } = context;
 
   const body = payload.comment.body;
   const repo = payload.repository.name;
   const owner = payload.repository.owner.login;
+  const issueNumber = payload.issue.number;
+  console.log(eventName);
 
   if (body.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(context))) {
@@ -141,11 +143,43 @@ export async function handleComment(context: Context<"issue_comment.created">) {
       repo,
       pull_number: pr.data.number,
     });
+  } else if (body.includes("ubiquity-os-command-wallet") && body.includes(userName)) {
+    await userOctokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      body: `Now I can self assign to this task!
+
+We have a built-in command called \`/start\` which also does some other checks before assignment, including seeing how saturated we are with other open GitHub issues now. This ensures that contributors don't "bite off more than they can chew."
+
+This feature is especially useful for our open source partners who want to attract talent from around the world to contribute, without having to manually assign them before starting. 
+
+When pricing is set on any GitHub Issue, they will be automatically populated in our [DevPool Directory](https://devpool.directory) making it easy for contributors to discover and join new projects.`,
+    });
+    await userOctokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      body: `/start\n\n<!-- ubiquity-os-command-start-stop ${context.userName} -->`,
+    });
+    await octokit.rest.issues.addAssignees({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      assignees: [context.userName],
+    });
+  } else if (eventName === "issue_comment.edited" && body.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
+    /*await userOctokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      body: `/ask How can I redeem my rewards? Can you tell me step by step?`,
+    });*/
   }
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger, octokit } = context;
+  const { payload, userOctokit, logger } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
@@ -160,19 +194,30 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       owner,
       repo,
       issue_number: issueNumber,
-      body: `/start\n\n<!-- ubiquity-os-command-start-stop ${context.userName} -->`,
+      body: `Hey there @${payload.repository.owner.login}, and welcome! This interactive demo highlights how UbiquityOS streamlines development workflows. Here’s what you can expect:
+
+- All functions are installable from our @ubiquity-os-marketplace, letting you tailor your management configurations for any organization or repository.
+- We’ll walk you through key capabilities—AI-powered task matching, automated pricing calculations, and smart contract integration for payments.
+- Adjust settings globally across your org or use local repo overrides. More details on repository config can be found [here](https://github.com/0x4007/ubiquity-os-demo-kljiu/blob/development/.github/.ubiquity-os.config.yml).
+
+### Getting Started
+- Try out the commands you see. Feel free to experiment with different tasks and features.
+- Create a [new issue](new) at any time to reset and begin anew.
+- Use \`/help\` if you’d like to see additional commands.
+
+Enjoy the tour!`,
     });
     await userOctokit.rest.issues.createComment({
       owner,
       repo,
       issue_number: issueNumber,
-      body: "/ask Can you help me solving this task by showing the code I should change?",
+      body: `The first step is for me to register my wallet address to collect rewards.`,
     });
-    await octokit.rest.issues.addAssignees({
+    await userOctokit.rest.issues.createComment({
       owner,
       repo,
       issue_number: issueNumber,
-      assignees: [context.userName],
+      body: "/wallet ubq.eth",
     });
   } else {
     logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
