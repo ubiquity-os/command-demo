@@ -31473,6 +31473,8 @@ async function handleLabel(e) {
       issue_number: n,
       body: "/ask Can you help me solving this task by showing the code I should change?",
     });
+  } else {
+    s.info("Ignoring label change", { label: a, assignee: t.issue.assignee });
   }
 }
 function isCommentEvent(e) {
