@@ -145,7 +145,7 @@ export async function handleComment(context: Context<"issue_comment.created">) {
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger } = context;
+  const { payload, userOctokit, logger, octokit } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
@@ -160,13 +160,19 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       owner,
       repo,
       issue_number: issueNumber,
-      body: "/start",
+      body: `/start\n\n<!-- ubiquity-os-command-start-stop ${context.userName} -->`,
     });
     await userOctokit.rest.issues.createComment({
       owner,
       repo,
       issue_number: issueNumber,
       body: "/ask Can you help me solving this task by showing the code I should change?",
+    });
+    await octokit.rest.issues.addAssignees({
+      owner,
+      repo,
+      issue_number: issueNumber,
+      assignees: [context.userName],
     });
   } else {
     logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
