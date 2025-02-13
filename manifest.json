@@ -7,5 +7,6 @@
     "default": {},
     "type": "object",
     "properties": {}
-  }
+  },
+  "homepage_url": "https://ubiquity-os-plugin-demo-development.ubiquity.workers.dev"
 }
