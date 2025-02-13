@@ -1,5 +1,19 @@
 import { Context } from "../types";
 
+async function isUserAdmin({ payload, octokit, logger }: Context) {
+  const username = payload.sender.login;
+  try {
+    await octokit.rest.orgs.getMembershipForUser({
+      org: payload.repository.owner.login,
+      username,
+    });
+    return true;
+  } catch (e) {
+    logger.debug(`${username} is not a member of ${payload.repository.owner.login}`, { e });
+    return false;
+  }
+}
+
 async function setLabels({ payload, octokit }: Context) {
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
@@ -100,6 +114,9 @@ export async function handleComment(context: Context<"issue_comment.created">) {
   const owner = payload.repository.owner.login;
 
   if (body.trim().startsWith("/demo")) {
+    if (!(await isUserAdmin(context))) {
+      throw logger.error("You are not an organization member thus cannot start a demo.");
+    }
     logger.info("Processing /demo command");
     await openIssue(context);
     await setLabels(context);
@@ -115,14 +132,14 @@ export async function handleComment(context: Context<"issue_comment.created">) {
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger } = context;
+  const { payload, userOctokit, logger, config } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
   const label = payload.label;
 
-  if (label?.name.startsWith("Price")) {
+  if (label?.name.startsWith("Price") && payload.issue.assignee?.login === config.userName) {
     logger.info("Handle pricing label set", { label });
     await userOctokit.rest.issues.createComment({
       owner,
