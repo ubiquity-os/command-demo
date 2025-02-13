@@ -10,8 +10,22 @@ async function isUserAdmin({ payload, octokit, logger }: Context) {
     return true;
   } catch (e) {
     logger.debug(`${username} is not a member of ${payload.repository.owner.login}`, { e });
-    return false;
   }
+  const permissionLevel = await octokit.rest.repos.getCollaboratorPermissionLevel({
+    username,
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+  });
+  const role = permissionLevel.data.role_name?.toLowerCase();
+  logger.debug(`Retrieved collaborator permission level for ${username}.`, {
+    username,
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+    isAdmin: permissionLevel.data.user?.permissions?.admin,
+    role,
+    data: permissionLevel.data,
+  });
+  return !!permissionLevel.data.user?.permissions?.admin;
 }
 
 async function setLabels({ payload, octokit }: Context) {
@@ -114,7 +128,7 @@ export async function handleComment(context: Context<"issue_comment.created">) {
 
   if (body.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(context))) {
-      throw logger.error("You are not an organization member thus cannot start a demo.");
+      throw logger.error("You do not have admin privileges thus cannot start a demo.");
     }
     logger.info("Processing /demo command");
     await openIssue(context);
@@ -131,14 +145,16 @@ export async function handleComment(context: Context<"issue_comment.created">) {
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger, userName } = context;
+  const { payload, userOctokit, logger } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
   const label = payload.label;
 
-  if (label?.name.startsWith("Price") && payload.issue.assignee?.login === userName) {
+  console.log(JSON.stringify(payload));
+
+  if (label?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(repo)) {
     logger.info("Handle pricing label set", { label });
     await userOctokit.rest.issues.createComment({
       owner,
@@ -153,6 +169,6 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       body: "/ask Can you help me solving this task by showing the code I should change?",
     });
   } else {
-    logger.info("Ignoring label change", { label, assignee: payload.issue.assignee });
+    logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
   }
 }
