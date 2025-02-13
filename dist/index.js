@@ -31464,29 +31464,29 @@ async function handleComment(e) {
     await setLabels(e);
   } else if (A.includes("ubiquity-os-command-start-stop") && A.includes(o)) {
     r.info("Processing ubiquity-os-command-start-stop post comment");
-    const t = await createPullRequest(e);
-    await s.rest.pulls.merge({ owner: i, repo: n, pull_number: t.data.number });
+    const o = await createPullRequest(e);
+    await s.rest.pulls.merge({ owner: i, repo: n, pull_number: o.data.number });
+    const A = t.issue.number;
+    await s.rest.issues.addAssignees({ owner: i, repo: n, issue_number: A, assignees: [e.userName] });
   }
 }
 async function handleLabel(e) {
-  const { payload: t, userOctokit: r, logger: s, octokit: o } = e;
-  const A = t.repository.name;
-  const n = t.issue.number;
-  const i = t.repository.owner.login;
-  const a = t.label;
-  console.log(JSON.stringify(t));
-  if (a?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(A)) {
-    s.info("Handle pricing label set", { label: a });
-    await r.rest.issues.createComment({ owner: i, repo: A, issue_number: n, body: `/start\n\n\x3c!-- ubiquity-os-command-start-stop ${e.userName} --\x3e` });
+  const { payload: t, userOctokit: r, logger: s } = e;
+  const o = t.repository.name;
+  const A = t.issue.number;
+  const n = t.repository.owner.login;
+  const i = t.label;
+  if (i?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(o)) {
+    s.info("Handle pricing label set", { label: i });
+    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: `/start\n\n\x3c!-- ubiquity-os-command-start-stop ${e.userName} --\x3e` });
     await r.rest.issues.createComment({
-      owner: i,
-      repo: A,
-      issue_number: n,
+      owner: n,
+      repo: o,
+      issue_number: A,
       body: "/ask Can you help me solving this task by showing the code I should change?",
     });
-    await o.rest.issues.addAssignees({ owner: i, repo: A, issue_number: n, assignees: [e.userName] });
   } else {
-    s.info("Ignoring label change", { label: a, assignee: t.issue.assignee, repo: A });
+    s.info("Ignoring label change", { label: i, assignee: t.issue.assignee, repo: o });
   }
 }
 function isCommentEvent(e) {
