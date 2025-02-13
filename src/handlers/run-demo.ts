@@ -128,7 +128,7 @@ export async function handleComment(context: Context<"issue_comment.created">) {
 
   if (body.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(context))) {
-      throw logger.error("You are not an organization member thus cannot start a demo.");
+      throw logger.error("You do not have admin privileges thus cannot start a demo.");
     }
     logger.info("Processing /demo command");
     await openIssue(context);
