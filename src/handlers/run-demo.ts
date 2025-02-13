@@ -152,5 +152,7 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       issue_number: issueNumber,
       body: "/ask Can you help me solving this task by showing the code I should change?",
     });
+  } else {
+    logger.info("Ignoring label change", { label, assignee: payload.issue.assignee });
   }
 }
