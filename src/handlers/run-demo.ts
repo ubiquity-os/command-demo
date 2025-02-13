@@ -43,13 +43,12 @@ async function openIssue({ octokit, payload }: Context): Promise<void> {
   });
 }
 
-async function createPullRequest({ payload, logger, userOctokit }: Context) {
+async function createPullRequest({ payload, logger, userOctokit, userName }: Context) {
   const sourceRepo = payload.repository.name;
   const sourceIssueNumber = payload.issue.number;
   const sourceOwner = payload.repository.owner.login;
 
-  const { data: user } = await userOctokit.rest.users.getAuthenticated();
-  logger.info(`Creating fork for user: ${user.login}`);
+  logger.info(`Creating fork for user: ${userName}`);
 
   await userOctokit.rest.repos.createFork({
     owner: sourceOwner,
@@ -73,25 +72,25 @@ async function createPullRequest({ payload, logger, userOctokit }: Context) {
   const ref = `fix/${crypto.randomUUID()}`;
 
   await userOctokit.rest.git.createRef({
-    owner: user.login,
+    owner: userName,
     repo: sourceRepo,
     ref: `refs/heads/${ref}`,
     sha: refData.object.sha,
   });
   const { data: commit } = await userOctokit.rest.git.getCommit({
-    owner: user.login,
+    owner: userName,
     repo: sourceRepo,
     commit_sha: refData.object.sha,
   });
   const { data: newCommit } = await userOctokit.rest.git.createCommit({
-    owner: user.login,
+    owner: userName,
     repo: sourceRepo,
     message: "chore: empty commit",
     tree: commit.tree.sha,
     parents: [refData.object.sha],
   });
   await userOctokit.rest.git.updateRef({
-    owner: user.login,
+    owner: userName,
     repo: sourceRepo,
     ref: `heads/${ref}`,
     sha: newCommit.sha,
@@ -99,7 +98,7 @@ async function createPullRequest({ payload, logger, userOctokit }: Context) {
   return await userOctokit.rest.pulls.create({
     owner: sourceOwner,
     repo: sourceRepo,
-    head: `${user.login}:${ref}`,
+    head: `${userName}:${ref}`,
     base: defaultBranch,
     body: `Resolves #${sourceIssueNumber}`,
     title: ref,
@@ -107,7 +106,7 @@ async function createPullRequest({ payload, logger, userOctokit }: Context) {
 }
 
 export async function handleComment(context: Context<"issue_comment.created">) {
-  const { payload, logger, octokit, config } = context;
+  const { payload, logger, octokit, userName } = context;
 
   const body = payload.comment.body;
   const repo = payload.repository.name;
@@ -120,7 +119,7 @@ export async function handleComment(context: Context<"issue_comment.created">) {
     logger.info("Processing /demo command");
     await openIssue(context);
     await setLabels(context);
-  } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(config.userName)) {
+  } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(userName)) {
     logger.info("Processing ubiquity-os-command-start-stop post comment");
     const pr = await createPullRequest(context);
     await octokit.rest.pulls.merge({
@@ -132,14 +131,14 @@ export async function handleComment(context: Context<"issue_comment.created">) {
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, logger, config } = context;
+  const { payload, userOctokit, logger, userName } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
   const label = payload.label;
 
-  if (label?.name.startsWith("Price") && payload.issue.assignee?.login === config.userName) {
+  if (label?.name.startsWith("Price") && payload.issue.assignee?.login === userName) {
     logger.info("Handle pricing label set", { label });
     await userOctokit.rest.issues.createComment({
       owner,

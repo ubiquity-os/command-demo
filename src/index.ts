@@ -9,7 +9,8 @@ export async function runPlugin(context: Context) {
   context.userOctokit = new customOctokit({
     auth: context.env.USER_GITHUB_TOKEN,
   });
-
+  const { data: user } = await context.userOctokit.rest.users.getAuthenticated();
+  context.userName = user.login;
   if (isCommentEvent(context)) {
     return await handleComment(context);
   } else if (isLabelEvent(context)) {

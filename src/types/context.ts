@@ -7,4 +7,5 @@ export type SupportedEvents = "issue_comment.created" | "issues.labeled";
 
 export type Context<T extends SupportedEvents = SupportedEvents> = PluginContext<PluginSettings, Env, null, T> & {
   userOctokit: InstanceType<typeof customOctokit>;
+  userName: string;
 };
