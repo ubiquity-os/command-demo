@@ -1,4 +1,4 @@
-# `@ubiquity-os/plugin-template`
+# `@ubiquity-os/plugin-demo`
 
 ## Prerequisites
 
@@ -25,14 +25,12 @@
 
 ```yml
 plugins:
-  - name: hello-world
-    id: hello-world
+  - name: plugin-demo
+    id: plugin-demo
     uses:
-      - plugin: http://localhost:4000
+      - plugin: https://ubiquity-os-plugin-demo-main.ubiquity.workers.dev
         with:
-          # Define configurable items here and the kernel will pass these to the plugin.
-          configurableResponse: "Hello, is it me you are looking for?"
-          customStringsUrl: "https://raw.githubusercontent.com/ubiquibot/plugin-template/development/strings.json"
+          userName: "ubiquity-os-simulant"
 ```
 
 ###### At this stage, your plugin will fire on your defined events with the required settings passed in from the kernel. You can now start writing your plugin's logic.

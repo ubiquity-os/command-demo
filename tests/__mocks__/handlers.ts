@@ -23,6 +23,11 @@ export const handlers = [
   http.get("https://api.github.com/users/:username", ({ params: { username } }) =>
     HttpResponse.json(db.users.findFirst({ where: { login: { equals: username as string } } }))
   ),
+  http.get("https://api.github.com/user", () => HttpResponse.json({ data: { login: "ubiquity-os-simulant" } })),
+  http.get("https://api.github.com/orgs/:org/memberships/:username", () => HttpResponse.json()),
+  http.patch("https://api.github.com/repos/:org/:repo/issues/:id", () => HttpResponse.json()),
+  http.delete("https://api.github.com/repos/:org/:repo/issues/:id/labels", () => HttpResponse.json()),
+  http.post("https://api.github.com/repos/:org/:repo/issues/:id/labels", () => HttpResponse.json()),
   // get repo
   http.get("https://api.github.com/repos/:owner/:repo", ({ params: { owner, repo } }: { params: { owner: string; repo: string } }) => {
     const item = db.repo.findFirst({ where: { name: { equals: repo }, owner: { login: { equals: owner } } } });
