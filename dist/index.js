@@ -31423,7 +31423,7 @@ async function setLabels({ payload: e, octokit: t }) {
   const s = e.issue.number;
   const o = e.repository.owner.login;
   await t.rest.issues.removeAllLabels({ owner: o, repo: r, issue_number: s });
-  await t.rest.issues.addLabels({ owner: o, repo: r, issue_number: s, labels: ["Priority: 1 (Normal)", "Time: <1 Hour"] });
+  await t.rest.issues.addLabels({ owner: o, repo: r, issue_number: s, labels: ["Priority: 1 (Normal)", "Time: <1 Hour", "Price: 50 USD"] });
 }
 async function openIssue({ octokit: e, payload: t }) {
   const r = t.repository.name;
