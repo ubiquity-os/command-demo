@@ -93,18 +93,29 @@ async function createPullRequest({ payload, logger, userOctokit }: Context) {
 }
 
 export async function handleComment(context: Context<"issue_comment.created">) {
-  const { payload } = context;
+  const { payload, logger, octokit, config } = context;
 
   const body = payload.comment.body;
+  const repo = payload.repository.name;
+  const owner = payload.repository.owner.login;
 
   if (body.trim().startsWith("/demo")) {
+    logger.info("Processing /demo command");
     await openIssue(context);
     await setLabels(context);
+  } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(config.userName)) {
+    logger.info("Processing ubiquity-os-command-start-stop post comment");
+    const pr = await createPullRequest(context);
+    await octokit.rest.pulls.merge({
+      owner,
+      repo,
+      pull_number: pr.data.number,
+    });
   }
 }
 
 export async function handleLabel(context: Context<"issues.labeled">) {
-  const { payload, userOctokit, octokit } = context;
+  const { payload, userOctokit, logger } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
@@ -112,6 +123,7 @@ export async function handleLabel(context: Context<"issues.labeled">) {
   const label = payload.label;
 
   if (label?.name.startsWith("Price")) {
+    logger.info("Handle pricing label set", { label });
     await userOctokit.rest.issues.createComment({
       owner,
       repo,
@@ -123,12 +135,6 @@ export async function handleLabel(context: Context<"issues.labeled">) {
       repo,
       issue_number: issueNumber,
       body: "/ask Can you help me solving this task by showing the code I should change?",
-    });
-    const pr = await createPullRequest(context);
-    await octokit.rest.pulls.merge({
-      owner,
-      repo,
-      pull_number: pr.data.number,
     });
   }
 }
