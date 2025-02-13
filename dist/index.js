@@ -31451,23 +31451,33 @@ async function createPullRequest({ payload: e, logger: t, userOctokit: r, userNa
   return await r.rest.pulls.create({ owner: n, repo: o, head: `${s}:${u}`, base: a, body: `Resolves #${A}`, title: u });
 }
 async function handleComment(e) {
-  const { payload: t, logger: r, octokit: s, userName: o } = e;
-  const A = t.comment.body;
-  const n = t.repository.name;
-  const i = t.repository.owner.login;
-  if (A.trim().startsWith("/demo")) {
+  const { eventName: t, payload: r, logger: s, octokit: o, userName: A, userOctokit: n } = e;
+  const i = r.comment.body;
+  const a = r.repository.name;
+  const c = r.repository.owner.login;
+  const u = r.issue.number;
+  console.log(t);
+  if (i.trim().startsWith("/demo")) {
     if (!(await isUserAdmin(e))) {
-      throw r.error("You do not have admin privileges thus cannot start a demo.");
+      throw s.error("You do not have admin privileges thus cannot start a demo.");
     }
-    r.info("Processing /demo command");
+    s.info("Processing /demo command");
     await openIssue(e);
     await setLabels(e);
-  } else if (A.includes("ubiquity-os-command-start-stop") && A.includes(o)) {
-    r.info("Processing ubiquity-os-command-start-stop post comment");
-    const o = await createPullRequest(e);
-    await s.rest.pulls.merge({ owner: i, repo: n, pull_number: o.data.number });
-    const A = t.issue.number;
-    await s.rest.issues.addAssignees({ owner: i, repo: n, issue_number: A, assignees: [e.userName] });
+  } else if (i.includes("ubiquity-os-command-start-stop") && i.includes(A)) {
+    s.info("Processing ubiquity-os-command-start-stop post comment");
+    const t = await createPullRequest(e);
+    await o.rest.pulls.merge({ owner: c, repo: a, pull_number: t.data.number });
+  } else if (i.includes("ubiquity-os-command-wallet") && i.includes(A)) {
+    await n.rest.issues.createComment({
+      owner: c,
+      repo: a,
+      issue_number: u,
+      body: `Now I can self assign to this task!\n\nWe have a built-in command called \`/start\` which also does some other checks before assignment, including seeing how saturated we are with other open GitHub issues now. This ensures that contributors don't "bite off more than they can chew."\n\nThis feature is especially useful for our open source partners who want to attract talent from around the world to contribute, without having to manually assign them before starting. \n\nWhen pricing is set on any GitHub Issue, they will be automatically populated in our [DevPool Directory](https://devpool.directory) making it easy for contributors to discover and join new projects.`,
+    });
+    await n.rest.issues.createComment({ owner: c, repo: a, issue_number: u, body: `/start\n\n\x3c!-- ubiquity-os-command-start-stop ${e.userName} --\x3e` });
+    await o.rest.issues.addAssignees({ owner: c, repo: a, issue_number: u, assignees: [e.userName] });
+  } else if (t === "issue_comment.edited" && i.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
   }
 }
 async function handleLabel(e) {
@@ -31476,21 +31486,28 @@ async function handleLabel(e) {
   const A = t.issue.number;
   const n = t.repository.owner.login;
   const i = t.label;
+  console.log(JSON.stringify(t));
   if (i?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(o)) {
     s.info("Handle pricing label set", { label: i });
-    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: `/start\n\n\x3c!-- ubiquity-os-command-start-stop ${e.userName} --\x3e` });
     await r.rest.issues.createComment({
       owner: n,
       repo: o,
       issue_number: A,
-      body: "/ask Can you help me solving this task by showing the code I should change?",
+      body: `Hey there @${t.repository.owner.login}, and welcome! This interactive demo highlights how UbiquityOS streamlines development workflows. Here’s what you can expect:\n\n- All functions are installable from our @ubiquity-os-marketplace, letting you tailor your management configurations for any organization or repository.\n- We’ll walk you through key capabilities—AI-powered task matching, automated pricing calculations, and smart contract integration for payments.\n- Adjust settings globally across your org or use local repo overrides. More details on repository config can be found [here](https://github.com/0x4007/ubiquity-os-demo-kljiu/blob/development/.github/.ubiquity-os.config.yml).\n\n### Getting Started\n- Try out the commands you see. Feel free to experiment with different tasks and features.\n- Create a [new issue](new) at any time to reset and begin anew.\n- Use \`/help\` if you’d like to see additional commands.\n\nEnjoy the tour!`,
     });
+    await r.rest.issues.createComment({
+      owner: n,
+      repo: o,
+      issue_number: A,
+      body: `The first step is for me to register my wallet address to collect rewards.`,
+    });
+    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet ubq.eth" });
   } else {
     s.info("Ignoring label change", { label: i, assignee: t.issue.assignee, repo: o });
   }
 }
 function isCommentEvent(e) {
-  return e.eventName === "issue_comment.created";
+  return e.eventName === "issue_comment.created" || e.eventName === "issue_comment.edited";
 }
 function isLabelEvent(e) {
   return e.eventName === "issues.labeled";
