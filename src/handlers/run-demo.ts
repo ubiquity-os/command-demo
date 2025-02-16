@@ -68,17 +68,11 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   await userOctokit.rest.repos.createFork({
     owner: sourceOwner,
     repo: sourceRepo,
+    name: newRepoName,
   });
 
   logger.debug("Waiting for the fork to be ready...");
   await new Promise((resolve) => setTimeout(resolve, 5000));
-
-  logger.debug(`Updating fork name to: ${newRepoName}`);
-  await userOctokit.rest.repos.update({
-    owner: userName,
-    repo: sourceRepo,
-    name: newRepoName,
-  });
 
   const { data: repoData } = await userOctokit.rest.repos.get({
     owner: sourceOwner,
