@@ -63,6 +63,19 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   const sourceOwner = payload.repository.owner.login;
   const newRepoName = `${sourceRepo}-${sourceOwner}`;
 
+  try {
+    const target = {
+      owner: userName,
+      repo: newRepoName,
+    };
+    // Check if fork already exists
+    await userOctokit.rest.repos.get(target);
+    logger.info("Fork already exists, will delete it.", { target });
+    await userOctokit.rest.repos.delete(target);
+  } catch (error) {
+    logger.error(`Could not check requested repo`, { error: error as Error });
+  }
+
   logger.info(`Creating fork for user: ${userName}`);
 
   await userOctokit.rest.repos.createFork({
