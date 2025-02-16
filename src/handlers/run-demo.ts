@@ -61,6 +61,7 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   const sourceRepo = payload.repository.name;
   const sourceIssueNumber = payload.issue.number;
   const sourceOwner = payload.repository.owner.login;
+  const newRepoName = `${sourceRepo}-${sourceOwner}`;
 
   logger.info(`Creating fork for user: ${userName}`);
 
@@ -71,6 +72,13 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
 
   logger.debug("Waiting for the fork to be ready...");
   await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  logger.debug(`Updating fork name to: ${newRepoName}`);
+  await userOctokit.rest.repos.update({
+    owner: userName,
+    repo: sourceRepo,
+    name: newRepoName,
+  });
 
   const { data: repoData } = await userOctokit.rest.repos.get({
     owner: sourceOwner,
@@ -87,31 +95,31 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
 
   logger.debug("Will try to create a reference", {
     owner: userName,
-    repo: sourceRepo,
+    repo: newRepoName,
     ref: `refs/heads/${ref}`,
     sha: refData.object.sha,
   });
   await userOctokit.rest.git.createRef({
     owner: userName,
-    repo: sourceRepo,
+    repo: newRepoName,
     ref: `refs/heads/${ref}`,
     sha: refData.object.sha,
   });
   const { data: commit } = await userOctokit.rest.git.getCommit({
     owner: userName,
-    repo: sourceRepo,
+    repo: newRepoName,
     commit_sha: refData.object.sha,
   });
   const { data: newCommit } = await userOctokit.rest.git.createCommit({
     owner: userName,
-    repo: sourceRepo,
+    repo: newRepoName,
     message: "chore: empty commit",
     tree: commit.tree.sha,
     parents: [refData.object.sha],
   });
   await userOctokit.rest.git.updateRef({
     owner: userName,
-    repo: sourceRepo,
+    repo: newRepoName,
     ref: `heads/${ref}`,
     sha: newCommit.sha,
   });
