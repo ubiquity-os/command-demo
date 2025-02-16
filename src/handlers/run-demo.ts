@@ -159,13 +159,7 @@ When pricing is set on any GitHub Issue, they will be automatically populated in
       owner,
       repo,
       issue_number: issueNumber,
-      body: `/start\n\n<!-- ubiquity-os-command-start-stop ${context.userName} -->`,
-    });
-    await octokit.rest.issues.addAssignees({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      assignees: [context.userName],
+      body: `/start`,
     });
   } else if (eventName === "issue_comment.edited" && body.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
     /*await userOctokit.rest.issues.createComment({
