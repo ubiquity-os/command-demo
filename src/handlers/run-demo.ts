@@ -85,6 +85,12 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   });
   const ref = `fix/${crypto.randomUUID()}`;
 
+  logger.debug("Will try to create a reference", {
+    owner: userName,
+    repo: sourceRepo,
+    ref: `refs/heads/${ref}`,
+    sha: refData.object.sha,
+  });
   await userOctokit.rest.git.createRef({
     owner: userName,
     repo: sourceRepo,
