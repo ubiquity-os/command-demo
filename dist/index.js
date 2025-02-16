@@ -31444,6 +31444,7 @@ async function createPullRequest({ payload: e, logger: t, userOctokit: r, userNa
   t.debug("Repository data", { defaultBranch: a, repoUrl: i.html_url });
   const { data: c } = await r.rest.git.getRef({ owner: n, repo: o, ref: `heads/${a}` });
   const u = `fix/${crypto.randomUUID()}`;
+  t.debug("Will try to create a reference", { owner: s, repo: o, ref: `refs/heads/${u}`, sha: c.object.sha });
   await r.rest.git.createRef({ owner: s, repo: o, ref: `refs/heads/${u}`, sha: c.object.sha });
   const { data: l } = await r.rest.git.getCommit({ owner: s, repo: o, commit_sha: c.object.sha });
   const { data: g } = await r.rest.git.createCommit({ owner: s, repo: o, message: "chore: empty commit", tree: l.tree.sha, parents: [c.object.sha] });
