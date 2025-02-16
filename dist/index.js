@@ -31436,33 +31436,23 @@ async function createPullRequest({ payload: e, logger: t, userOctokit: r, userNa
   const A = e.issue.number;
   const n = e.repository.owner.login;
   const i = `${o}-${n}`;
-  const a = await r.paginate(r.rest.repos.listForUser, { username: s });
-  for (const e of a) {
-    const { data: s } = await r.rest.repos.get({ owner: e.owner.login, repo: e.name });
-    t.debug("Checking existing fork", { url: s.html_url, parent: s.parent?.html_url });
-    if (s.fork && s.parent && s.parent.owner.login === n && s.parent.name === o) {
-      t.info(`Found existing fork with name: ${s.parent.name}, will attempt deletion.`);
-      await r.rest.repos.delete({ owner: e.owner.login, repo: e.name });
-      break;
-    }
-  }
   t.info(`Creating fork for user`, { owner: n, repo: o });
   await r.rest.repos.createFork({ owner: n, repo: o });
   t.debug("Waiting for the fork to be ready...");
   await new Promise((e) => setTimeout(e, 5e3));
   t.debug(`Updating fork name to: ${i}`);
   await r.rest.repos.update({ owner: s, repo: o, name: i });
-  const { data: c } = await r.rest.repos.get({ owner: n, repo: o });
-  const u = c.default_branch;
-  t.debug("Repository data", { defaultBranch: u, repoUrl: c.html_url });
-  const { data: l } = await r.rest.git.getRef({ owner: n, repo: o, ref: `heads/${u}` });
-  const g = `fix/${crypto.randomUUID()}`;
-  t.debug("Will try to create a reference", { owner: s, repo: i, ref: `refs/heads/${g}`, sha: l.object.sha });
-  await r.rest.git.createRef({ owner: s, repo: i, ref: `refs/heads/${g}`, sha: l.object.sha });
-  const { data: p } = await r.rest.git.getCommit({ owner: s, repo: i, commit_sha: l.object.sha });
-  const { data: E } = await r.rest.git.createCommit({ owner: s, repo: i, message: "chore: empty commit", tree: p.tree.sha, parents: [l.object.sha] });
-  await r.rest.git.updateRef({ owner: s, repo: i, ref: `heads/${g}`, sha: E.sha });
-  return await r.rest.pulls.create({ owner: n, repo: o, head: `${s}:${g}`, base: u, body: `Resolves #${A}`, title: g });
+  const { data: a } = await r.rest.repos.get({ owner: n, repo: o });
+  const c = a.default_branch;
+  t.debug("Repository data", { defaultBranch: c, repoUrl: a.html_url });
+  const { data: u } = await r.rest.git.getRef({ owner: n, repo: o, ref: `heads/${c}` });
+  const l = `fix/${crypto.randomUUID()}`;
+  t.debug("Will try to create a reference", { owner: s, repo: i, ref: `refs/heads/${l}`, sha: u.object.sha });
+  await r.rest.git.createRef({ owner: s, repo: i, ref: `refs/heads/${l}`, sha: u.object.sha });
+  const { data: g } = await r.rest.git.getCommit({ owner: s, repo: i, commit_sha: u.object.sha });
+  const { data: p } = await r.rest.git.createCommit({ owner: s, repo: i, message: "chore: empty commit", tree: g.tree.sha, parents: [u.object.sha] });
+  await r.rest.git.updateRef({ owner: s, repo: i, ref: `heads/${l}`, sha: p.sha });
+  return await r.rest.pulls.create({ owner: n, repo: o, head: `${s}:${l}`, base: c, body: `Resolves #${A}`, title: l });
 }
 async function handleCommentCreated(e) {
   const { payload: t, logger: r, octokit: s, userName: o, userOctokit: A } = e;
