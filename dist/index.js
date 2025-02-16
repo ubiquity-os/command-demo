@@ -31436,6 +31436,14 @@ async function createPullRequest({ payload: e, logger: t, userOctokit: r, userNa
   const A = e.issue.number;
   const n = e.repository.owner.login;
   const i = `${o}-${n}`;
+  try {
+    const e = { owner: s, repo: i };
+    await r.rest.repos.get(e);
+    t.info("Fork already exists, will delete it.", { target: e });
+    await r.rest.repos.delete(e);
+  } catch (e) {
+    t.error(`Could not check requested repo`, { error: e });
+  }
   t.info(`Creating fork for user: ${s}`);
   await r.rest.repos.createFork({ owner: n, repo: o, name: i });
   t.debug("Waiting for the fork to be ready...");
