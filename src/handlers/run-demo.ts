@@ -245,7 +245,7 @@ Enjoy the tour!`,
       owner,
       repo,
       issue_number: issueNumber,
-      body: "/wallet ubq.eth",
+      body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
     });
   } else {
     logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
