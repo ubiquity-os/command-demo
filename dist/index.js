@@ -31437,11 +31437,9 @@ async function createPullRequest({ payload: e, logger: t, userOctokit: r, userNa
   const n = e.repository.owner.login;
   const i = `${o}-${n}`;
   t.info(`Creating fork for user: ${s}`);
-  await r.rest.repos.createFork({ owner: n, repo: o });
+  await r.rest.repos.createFork({ owner: n, repo: o, name: i });
   t.debug("Waiting for the fork to be ready...");
   await new Promise((e) => setTimeout(e, 5e3));
-  t.debug(`Updating fork name to: ${i}`);
-  await r.rest.repos.update({ owner: s, repo: o, name: i });
   const { data: a } = await r.rest.repos.get({ owner: n, repo: o });
   const c = a.default_branch;
   t.debug("Repository data", { defaultBranch: c, repoUrl: a.html_url });
