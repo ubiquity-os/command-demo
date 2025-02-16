@@ -156,8 +156,8 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   });
 }
 
-export async function handleComment(context: Context<"issue_comment.created" | "issue_comment.edited">) {
-  const { eventName, payload, logger, octokit, userName, userOctokit } = context;
+export async function handleCommentCreated(context: Context<"issue_comment.created">) {
+  const { payload, logger, octokit, userName, userOctokit } = context;
 
   const body = payload.comment.body;
   const repo = payload.repository.name;
@@ -170,7 +170,7 @@ export async function handleComment(context: Context<"issue_comment.created" | "
     }
     logger.info("Processing /demo command");
     await openIssue(context);
-    await setLabels(context);
+    await handleInit(context);
   } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(userName)) {
     logger.info("Processing ubiquity-os-command-start-stop post comment");
     const pr = await createPullRequest(context);
@@ -198,7 +198,15 @@ When pricing is set on any GitHub Issue, they will be automatically populated in
       issue_number: issueNumber,
       body: `/start`,
     });
-  } else if (eventName === "issue_comment.edited" && body.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
+  }
+}
+
+export async function handleCommentEdited(context: Context<"issue_comment.edited">) {
+  const { eventName, payload } = context;
+
+  const body = payload.comment.body;
+
+  if (eventName === "issue_comment.edited" && body.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
     /*await userOctokit.rest.issues.createComment({
       owner,
       repo,
@@ -208,21 +216,20 @@ When pricing is set on any GitHub Issue, they will be automatically populated in
   }
 }
 
-export async function handleLabel(context: Context<"issues.labeled">) {
+export async function handleInit(context: Context<"issue_comment.created">) {
   const { payload, userOctokit, logger } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
-  const label = payload.label;
 
-  if (label?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(repo)) {
-    logger.info("Handle pricing label set", { label });
-    await userOctokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      body: `Hey there @${payload.repository.owner.login}, and welcome! This interactive demo highlights how UbiquityOS streamlines development workflows. Here’s what you can expect:
+  logger.info("Starting demo", { owner, repo, issueNumber });
+
+  await userOctokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    body: `Hey there @${payload.repository.owner.login}, and welcome! This interactive demo highlights how UbiquityOS streamlines development workflows. Here’s what you can expect:
 
 - All functions are installable from our @ubiquity-os-marketplace, letting you tailor your management configurations for any organization or repository.
 - We’ll walk you through key capabilities—AI-powered task matching, automated pricing calculations, and smart contract integration for payments.
@@ -234,20 +241,17 @@ export async function handleLabel(context: Context<"issues.labeled">) {
 - Use \`/help\` if you’d like to see additional commands.
 
 Enjoy the tour!`,
-    });
-    await userOctokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      body: `The first step is for me to register my wallet address to collect rewards.`,
-    });
-    await userOctokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
-    });
-  } else {
-    logger.info("Ignoring label change", { label, assignee: payload.issue.assignee, repo });
-  }
+  });
+  await userOctokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    body: `The first step is for me to register my wallet address to collect rewards.`,
+  });
+  await userOctokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
+  });
 }
