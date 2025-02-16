@@ -63,6 +63,8 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   const sourceOwner = payload.repository.owner.login;
   const newRepoName = `${sourceRepo}-${sourceOwner}`;
 
+  // Trying to solve cloudflare error: "Too many subrequests"
+  /*
   const repos = await userOctokit.paginate(userOctokit.rest.repos.listForUser, {
     username: userName,
   });
@@ -82,6 +84,7 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
       break;
     }
   }
+  */
 
   logger.info(`Creating fork for user`, {
     owner: sourceOwner,
