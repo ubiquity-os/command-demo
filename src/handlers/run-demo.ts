@@ -63,29 +63,45 @@ async function createPullRequest({ payload, logger, userOctokit, userName }: Con
   const sourceOwner = payload.repository.owner.login;
   const newRepoName = `${sourceRepo}-${sourceOwner}`;
 
-  try {
-    const target = {
-      owner: userName,
-      repo: newRepoName,
-    };
-    // Check if fork already exists
-    await userOctokit.rest.repos.get(target);
-    logger.info("Fork already exists, will delete it.", { target });
-    await userOctokit.rest.repos.delete(target);
-  } catch (error) {
-    logger.error(`Could not check requested repo`, { error: error as Error });
+  const repos = await userOctokit.paginate(userOctokit.rest.repos.listForUser, {
+    username: userName,
+  });
+
+  for (const repo of repos) {
+    const { data } = await userOctokit.rest.repos.get({
+      owner: repo.owner.login,
+      repo: repo.name,
+    });
+    logger.debug("Checking existing fork", { url: data.html_url, parent: data.parent?.html_url });
+    if (data.fork && data.parent && data.parent.owner.login === sourceOwner && data.parent.name === sourceRepo) {
+      logger.info(`Found existing fork with name: ${data.parent.name}, will attempt deletion.`);
+      await userOctokit.rest.repos.delete({
+        owner: repo.owner.login,
+        repo: repo.name,
+      });
+      break;
+    }
   }
 
-  logger.info(`Creating fork for user: ${userName}`);
+  logger.info(`Creating fork for user`, {
+    owner: sourceOwner,
+    repo: sourceRepo,
+  });
 
   await userOctokit.rest.repos.createFork({
     owner: sourceOwner,
     repo: sourceRepo,
-    name: newRepoName,
   });
 
   logger.debug("Waiting for the fork to be ready...");
   await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  logger.debug(`Updating fork name to: ${newRepoName}`);
+  await userOctokit.rest.repos.update({
+    owner: userName,
+    repo: sourceRepo,
+    name: newRepoName,
+  });
 
   const { data: repoData } = await userOctokit.rest.repos.get({
     owner: sourceOwner,
@@ -199,8 +215,6 @@ export async function handleLabel(context: Context<"issues.labeled">) {
   const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
   const label = payload.label;
-
-  console.log(JSON.stringify(payload));
 
   if (label?.name.startsWith("Price") && RegExp(/ubiquity-os-demo\s*/).test(repo)) {
     logger.info("Handle pricing label set", { label });
