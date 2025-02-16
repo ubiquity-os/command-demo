@@ -31512,7 +31512,7 @@ async function handleLabel(e) {
       issue_number: A,
       body: `The first step is for me to register my wallet address to collect rewards.`,
     });
-    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet ubq.eth" });
+    await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd" });
   } else {
     s.info("Ignoring label change", { label: i, assignee: t.issue.assignee, repo: o });
   }
