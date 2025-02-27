@@ -270,6 +270,9 @@ export async function handleRepositoryCreated(context: Context<"issues.opened">)
   }
 
   const { data } = await userOctokit.rest.users.getAuthenticated();
+
+  logger.info(`Will try to invite ${data.login} to the collaborator list.`);
+
   const { data: invitationData } = await userOctokit.rest.repos.addCollaborator({
     owner: payload.repository.owner.login,
     repo: payload.repository.name,
