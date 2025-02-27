@@ -31418,13 +31418,6 @@ async function isUserAdmin({ payload: e, octokit: t, logger: r }) {
   });
   return !!o.data.user?.permissions?.admin;
 }
-async function setLabels({ payload: e, octokit: t }) {
-  const r = e.repository.name;
-  const s = e.issue.number;
-  const o = e.repository.owner.login;
-  await t.rest.issues.removeAllLabels({ owner: o, repo: r, issue_number: s });
-  await t.rest.issues.addLabels({ owner: o, repo: r, issue_number: s, labels: ["Priority: 1 (Normal)", "Time: <1 Hour"] });
-}
 async function openIssue({ octokit: e, payload: t }) {
   const r = t.repository.name;
   const s = t.issue.number;
@@ -31502,6 +31495,17 @@ async function handleInit(e) {
   await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: `The first step is for me to register my wallet address to collect rewards.` });
   await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd" });
 }
+async function handleRepositoryCreated(e) {
+  const { userOctokit: t, payload: r, logger: s } = e;
+  if (!r.repository.name.startsWith("ubiquity-os-demo")) {
+    s.warn("Will not invite the demo user as a collaborator because this doesn't seem to be the demo repository.", { repo: r.repository.html_url });
+    return;
+  }
+  const { data: o } = await t.rest.users.getAuthenticated();
+  const { data: A } = await t.rest.repos.addCollaborator({ owner: r.repository.owner.login, repo: r.repository.name, username: o.login, permission: "push" });
+  s.info("Invited the demo user as a collaborator", { repo: r.repository.html_url, username: o.login });
+  return A;
+}
 function isCommentCreatedEvent(e) {
   return e.eventName === "issue_comment.created";
 }
@@ -31510,6 +31514,9 @@ function isCommentEditedEvent(e) {
 }
 function isLabelEvent(e) {
   return e.eventName === "issues.labeled";
+}
+function isRepositoryCreateEvent(e) {
+  return e.eventName === "repository.created";
 }
 async function runPlugin(e) {
   const { logger: t, eventName: r } = e;
@@ -31520,6 +31527,8 @@ async function runPlugin(e) {
     return await handleCommentCreated(e);
   } else if (isCommentEditedEvent(e)) {
     return await handleCommentEdited(e);
+  } else if (isRepositoryCreateEvent(e)) {
+    return await handleRepositoryCreated(e);
   }
   t.error(`Unsupported event: ${r}`);
 }
