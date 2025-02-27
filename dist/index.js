@@ -31515,8 +31515,8 @@ function isCommentEditedEvent(e) {
 function isLabelEvent(e) {
   return e.eventName === "issues.labeled";
 }
-function isRepositoryCreateEvent(e) {
-  return e.eventName === "repository.created";
+function isIssueOpenedEvent(e) {
+  return e.eventName === "issues.opened";
 }
 async function runPlugin(e) {
   const { logger: t, eventName: r } = e;
@@ -31527,7 +31527,7 @@ async function runPlugin(e) {
     return await handleCommentCreated(e);
   } else if (isCommentEditedEvent(e)) {
     return await handleCommentEdited(e);
-  } else if (isRepositoryCreateEvent(e)) {
+  } else if (isIssueOpenedEvent(e)) {
     return await handleRepositoryCreated(e);
   }
   t.error(`Unsupported event: ${r}`);
