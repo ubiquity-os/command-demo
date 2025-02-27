@@ -31520,6 +31520,7 @@ function isIssueOpenedEvent(e) {
 }
 async function runPlugin(e) {
   const { logger: t, eventName: r } = e;
+  t.info(`Event name ${r}`);
   e.userOctokit = new kt({ auth: e.env.USER_GITHUB_TOKEN });
   const { data: s } = await e.userOctokit.rest.users.getAuthenticated();
   e.userName = s.login;
