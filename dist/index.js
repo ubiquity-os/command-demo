@@ -31502,6 +31502,7 @@ async function handleRepositoryCreated(e) {
     return;
   }
   const { data: o } = await t.rest.users.getAuthenticated();
+  s.info(`Will try to invite ${o.login} to the collaborator list.`);
   const { data: A } = await t.rest.repos.addCollaborator({ owner: r.repository.owner.login, repo: r.repository.name, username: o.login, permission: "push" });
   s.info("Invited the demo user as a collaborator", { repo: r.repository.html_url, username: o.login });
   return A;
