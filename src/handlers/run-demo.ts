@@ -259,7 +259,7 @@ Enjoy the tour!`,
   });
 }
 
-export async function handleRepositoryCreated(context: Context<"repository.created">) {
+export async function handleRepositoryCreated(context: Context<"issues.opened">) {
   const { userOctokit, payload, logger } = context;
 
   if (!payload.repository.name.startsWith("ubiquity-os-demo")) {

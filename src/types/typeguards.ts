@@ -12,6 +12,6 @@ export function isLabelEvent(context: Context): context is Context<"issues.label
   return context.eventName === "issues.labeled";
 }
 
-export function isRepositoryCreateEvent(context: Context): context is Context<"repository.created"> {
-  return context.eventName === "repository.created";
+export function isIssueOpenedEvent(context: Context): context is Context<"issues.opened"> {
+  return context.eventName === "issues.opened";
 }
