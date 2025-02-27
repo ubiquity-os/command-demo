@@ -6,6 +6,8 @@ import { isCommentCreatedEvent, isCommentEditedEvent, isIssueOpenedEvent } from 
 export async function runPlugin(context: Context) {
   const { logger, eventName } = context;
 
+  logger.info(`Event name ${eventName}`);
+
   context.userOctokit = new customOctokit({
     auth: context.env.USER_GITHUB_TOKEN,
   });
