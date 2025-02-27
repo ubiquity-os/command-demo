@@ -11,3 +11,7 @@ export function isCommentEditedEvent(context: Context): context is Context<"issu
 export function isLabelEvent(context: Context): context is Context<"issues.labeled"> {
   return context.eventName === "issues.labeled";
 }
+
+export function isRepositoryCreateEvent(context: Context): context is Context<"repository.created"> {
+  return context.eventName === "repository.created";
+}

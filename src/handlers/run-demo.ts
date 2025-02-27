@@ -28,24 +28,24 @@ async function isUserAdmin({ payload, octokit, logger }: Context) {
   return !!permissionLevel.data.user?.permissions?.admin;
 }
 
-async function setLabels({ payload, octokit }: Context) {
-  const repo = payload.repository.name;
-  const issueNumber = payload.issue.number;
-  const owner = payload.repository.owner.login;
-  await octokit.rest.issues.removeAllLabels({
-    owner,
-    repo,
-    issue_number: issueNumber,
-  });
-  await octokit.rest.issues.addLabels({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    labels: ["Priority: 1 (Normal)", "Time: <1 Hour"],
-  });
-}
+// async function setLabels({ payload, octokit }: Context) {
+//   const repo = payload.repository.name;
+//   const issueNumber = payload.issue.number;
+//   const owner = payload.repository.owner.login;
+//   await octokit.rest.issues.removeAllLabels({
+//     owner,
+//     repo,
+//     issue_number: issueNumber,
+//   });
+//   await octokit.rest.issues.addLabels({
+//     owner,
+//     repo,
+//     issue_number: issueNumber,
+//     labels: ["Priority: 1 (Normal)", "Time: <1 Hour"],
+//   });
+// }
 
-async function openIssue({ octokit, payload }: Context): Promise<void> {
+async function openIssue({ octokit, payload }: Context<"issue_comment.created">): Promise<void> {
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
   const owner = payload.repository.owner.login;
@@ -57,7 +57,7 @@ async function openIssue({ octokit, payload }: Context): Promise<void> {
   });
 }
 
-async function createPullRequest({ payload, logger, userOctokit, userName }: Context) {
+async function createPullRequest({ payload, logger, userOctokit, userName }: Context<"issue_comment.created">) {
   const sourceRepo = payload.repository.name;
   const sourceIssueNumber = payload.issue.number;
   const sourceOwner = payload.repository.owner.login;
@@ -257,4 +257,30 @@ Enjoy the tour!`,
     issue_number: issueNumber,
     body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
   });
+}
+
+export async function handleRepositoryCreated(context: Context<"repository.created">) {
+  const { userOctokit, payload, logger } = context;
+
+  if (!payload.repository.name.startsWith("ubiquity-os-demo")) {
+    logger.warn("Will not invite the demo user as a collaborator because this doesn't seem to be the demo repository.", {
+      repo: payload.repository.html_url,
+    });
+    return;
+  }
+
+  const { data } = await userOctokit.rest.users.getAuthenticated();
+  const { data: invitationData } = await userOctokit.rest.repos.addCollaborator({
+    owner: payload.repository.owner.login,
+    repo: payload.repository.name,
+    username: data.login,
+    permission: "push",
+  });
+
+  logger.info("Invited the demo user as a collaborator", {
+    repo: payload.repository.html_url,
+    username: data.login,
+  });
+
+  return invitationData;
 }
