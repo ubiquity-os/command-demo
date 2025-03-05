@@ -24,6 +24,7 @@ export default {
       }
     ).fetch(request, env, executionCtx);
   },
+
   async email(message: EmailMessage) {
     console.log(JSON.stringify(message));
     console.log("Received email from:", message.from);

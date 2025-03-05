@@ -258,36 +258,3 @@ Enjoy the tour!`,
     body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
   });
 }
-
-export async function handleRepositoryCreated(context: Context<"issues.opened">) {
-  const { userOctokit, payload, logger } = context;
-
-  if (!payload.repository.name.startsWith("ubiquity-os-demo")) {
-    logger.warn("Will not invite the demo user as a collaborator because this doesn't seem to be the demo repository.", {
-      repo: payload.repository.html_url,
-    });
-    return;
-  }
-
-  const { data } = await userOctokit.rest.users.getAuthenticated();
-
-  logger.info(`Will try to invite ${data.name} (${data.login}) to the collaborator list.`, {
-    owner: payload.repository.owner.login,
-    repo: payload.repository.name,
-    login: data.login,
-  });
-
-  const { data: invitationData } = await userOctokit.rest.repos.addCollaborator({
-    owner: payload.repository.owner.login,
-    repo: payload.repository.name,
-    username: data.name ?? data.login,
-    permission: "push",
-  });
-
-  logger.info("Invited the demo user as a collaborator", {
-    repo: payload.repository.html_url,
-    username: data.login,
-  });
-
-  return invitationData;
-}
