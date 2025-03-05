@@ -31495,23 +31495,6 @@ async function handleInit(e) {
   await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: `The first step is for me to register my wallet address to collect rewards.` });
   await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd" });
 }
-async function handleRepositoryCreated(e) {
-  const { userOctokit: t, payload: r, logger: s } = e;
-  if (!r.repository.name.startsWith("ubiquity-os-demo")) {
-    s.warn("Will not invite the demo user as a collaborator because this doesn't seem to be the demo repository.", { repo: r.repository.html_url });
-    return;
-  }
-  const { data: o } = await t.rest.users.getAuthenticated();
-  s.info(`Will try to invite ${o.name} (${o.login}) to the collaborator list.`);
-  const { data: A } = await t.rest.repos.addCollaborator({
-    owner: r.repository.owner.login,
-    repo: r.repository.name,
-    username: o.name ?? o.login,
-    permission: "push",
-  });
-  s.info("Invited the demo user as a collaborator", { repo: r.repository.html_url, username: o.login });
-  return A;
-}
 function isCommentCreatedEvent(e) {
   return e.eventName === "issue_comment.created";
 }
@@ -31520,9 +31503,6 @@ function isCommentEditedEvent(e) {
 }
 function isLabelEvent(e) {
   return e.eventName === "issues.labeled";
-}
-function isIssueOpenedEvent(e) {
-  return e.eventName === "issues.opened";
 }
 async function runPlugin(e) {
   const { logger: t, eventName: r } = e;
@@ -31534,8 +31514,6 @@ async function runPlugin(e) {
     return await handleCommentCreated(e);
   } else if (isCommentEditedEvent(e)) {
     return await handleCommentEdited(e);
-  } else if (isIssueOpenedEvent(e)) {
-    return await handleRepositoryCreated(e);
   }
   t.error(`Unsupported event: ${r}`);
 }
