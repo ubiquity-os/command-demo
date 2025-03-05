@@ -1,5 +1,6 @@
 import { EmailMessage } from "@cloudflare/workers-types";
 import { createPlugin } from "@ubiquity-os/plugin-sdk";
+import { customOctokit } from "@ubiquity-os/plugin-sdk/dist/octokit";
 import { Manifest } from "@ubiquity-os/plugin-sdk/manifest";
 import { LOG_LEVEL, LogLevel } from "@ubiquity-os/ubiquity-os-logger";
 import { ExecutionContext } from "hono";
@@ -25,7 +26,7 @@ export default {
     ).fetch(request, env, executionCtx);
   },
 
-  async email(message: EmailMessage & { headers: { get: (s: string) => string } }) {
+  async email(message: EmailMessage & { headers: { get: (s: string) => string } }, env: Env) {
     console.log(JSON.stringify(message));
     console.log("Received email from:", message.from);
     console.log("To:", message.to);
@@ -36,6 +37,13 @@ export default {
       if (matches) {
         const target = matches[1];
         console.log(target);
+        const userOctokit = new customOctokit({
+          auth: env.USER_GITHUB_TOKEN,
+        });
+        const { data } = await userOctokit.rest.repos.listInvitationsForAuthenticatedUser();
+        await userOctokit.rest.repos.acceptInvitationForAuthenticatedUser({
+          invitation_id: data[0].id,
+        });
         // await message.forward("ubiquity-os-simulant@ubq.fi");
       }
     } else {
