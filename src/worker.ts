@@ -25,10 +25,21 @@ export default {
     ).fetch(request, env, executionCtx);
   },
 
-  async email(message: EmailMessage) {
+  async email(message: EmailMessage & { headers: { get: (s: string) => string } }) {
     console.log(JSON.stringify(message));
     console.log("Received email from:", message.from);
-    // console.log("Subject:", message.headers.get("subject"));
     console.log("To:", message.to);
+    if (message.from === "noreply@github.com") {
+      const subject = message.headers.get("subject");
+      const reg = new RegExp(/invited you to (\S+\/\S+)/, "i");
+      const matches = reg.exec(subject);
+      if (matches) {
+        const target = matches[1];
+        console.log(target);
+        // await message.forward("ubiquity-os-simulant@ubq.fi");
+      }
+    } else {
+      // message.setReject(`Unknown address ${message.to}`);
+    }
   },
 };
