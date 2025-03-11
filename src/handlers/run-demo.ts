@@ -1,4 +1,5 @@
 import { Context } from "../types";
+import { acceptCollaboratorInvitation } from "./collaborator-invitation";
 
 async function isUserAdmin({ payload, octokit, logger }: Context) {
   const username = payload.sender.login;
@@ -257,4 +258,5 @@ Enjoy the tour!`,
     issue_number: issueNumber,
     body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
   });
+  await acceptCollaboratorInvitation(owner, repo, context.env);
 }

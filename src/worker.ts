@@ -1,10 +1,10 @@
 import { EmailMessage } from "@cloudflare/workers-types";
 import { createPlugin } from "@ubiquity-os/plugin-sdk";
-import { customOctokit } from "@ubiquity-os/plugin-sdk/dist/octokit";
 import { Manifest } from "@ubiquity-os/plugin-sdk/manifest";
 import { LOG_LEVEL, LogLevel } from "@ubiquity-os/ubiquity-os-logger";
 import { ExecutionContext } from "hono";
 import manifest from "../manifest.json";
+import { acceptCollaboratorInvitation } from "./handlers/collaborator-invitation";
 import { runPlugin } from "./index";
 import { Context, Env, envSchema, PluginSettings, pluginSettingsSchema, SupportedEvents } from "./types";
 
@@ -35,15 +35,8 @@ export default {
       const reg = new RegExp(/invited you to (\S+\/\S+)/, "i");
       const matches = reg.exec(subject);
       if (matches) {
-        const target = matches[1];
-        console.log(target);
-        const userOctokit = new customOctokit({
-          auth: env.USER_GITHUB_TOKEN,
-        });
-        const { data } = await userOctokit.rest.repos.listInvitationsForAuthenticatedUser();
-        await userOctokit.rest.repos.acceptInvitationForAuthenticatedUser({
-          invitation_id: data[0].id,
-        });
+        const [owner, repo] = matches[1].split("/");
+        await acceptCollaboratorInvitation(owner, repo, env);
         // await message.forward("ubiquity-os-simulant@ubq.fi");
       }
     } else {
