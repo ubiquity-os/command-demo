@@ -1915,7 +1915,7 @@ var t = {
     e.exports = __toCommonJS(i);
     var a = r(9755);
     var c = r(9071);
-    var u = "7.1.0";
+    var u = "7.1.1";
     var l = r(9755);
     var g = r(9755);
     function _buildMessageForResponseErrors(e) {
@@ -2029,7 +2029,7 @@ var t = {
         }
         const o = Object.assign({}, r.request);
         if (r.request.headers.authorization) {
-          o.headers = Object.assign({}, r.request.headers, { authorization: r.request.headers.authorization.replace(/ .*$/, " [REDACTED]") });
+          o.headers = Object.assign({}, r.request.headers, { authorization: r.request.headers.authorization.replace(/(?<! ) .*$/, " [REDACTED]") });
         }
         o.url = o.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
         this.request = o;
@@ -2069,7 +2069,7 @@ var t = {
     e.exports = __toCommonJS(i);
     var a = r(206);
     var c = r(9071);
-    var u = "8.4.0";
+    var u = "8.4.1";
     function isPlainObject(e) {
       if (typeof e !== "object" || e === null) return false;
       if (Object.prototype.toString.call(e) !== "[object Object]") return false;
@@ -2116,7 +2116,7 @@ var t = {
             i[e[0]] = e[1];
           }
           if ("deprecation" in i) {
-            const t = i.link && i.link.match(/<([^>]+)>; rel="deprecation"/);
+            const t = i.link && i.link.match(/<([^<>]+)>; rel="deprecation"/);
             const r = t && t.pop();
             A.warn(`[@octokit/request] "${e.method} ${e.url}" is deprecated. It is scheduled to be removed on ${i.sunset}${r ? `. See ${r}` : ""}`);
           }
@@ -2218,7 +2218,7 @@ var t = {
     __export(i, { endpoint: () => p });
     e.exports = __toCommonJS(i);
     var a = r(9071);
-    var c = "9.0.5";
+    var c = "9.0.6";
     var u = `octokit-endpoint.js/${c} ${(0, a.getUserAgent)()}`;
     var l = {
       method: "GET",
@@ -2301,9 +2301,9 @@ var t = {
           .join("&")
       );
     }
-    var g = /\{[^}]+\}/g;
+    var g = /\{[^{}}]+\}/g;
     function removeNonChars(e) {
-      return e.replace(/^\W+|\W+$/g, "").split(/,/);
+      return e.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
     }
     function extractUrlVariableNames(e) {
       const t = e.match(g);
@@ -2471,7 +2471,7 @@ var t = {
         }
         if (r.endsWith("/graphql")) {
           if (e.mediaType.previews?.length) {
-            const t = s.accept.match(/[\w-]+(?=-preview)/g) || [];
+            const t = s.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
             s.accept = t
               .concat(e.mediaType.previews)
               .map((t) => {
@@ -2670,7 +2670,7 @@ var t = {
       paginatingEndpoints: () => a,
     });
     e.exports = __toCommonJS(A);
-    var n = "9.2.1";
+    var n = "9.2.2";
     function normalizePaginatedListResponse(e) {
       if (!e.data) {
         return { ...e, data: [] };
@@ -2708,7 +2708,7 @@ var t = {
             try {
               const e = await o({ method: A, url: i, headers: n });
               const t = normalizePaginatedListResponse(e);
-              i = ((t.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+              i = ((t.headers.link || "").match(/<([^<>]+)>;\s*rel="next"/) || [])[1];
               return { value: t };
             } catch (e) {
               if (e.status !== 409) throw e;
@@ -22256,6 +22256,46 @@ function cleanLogString(e) {
 function cleanSpyLogs(e) {
   return cleanLogs(e);
 }
+var compose = (e, t, r) => (s, o) => {
+  let A = -1;
+  return dispatch(0);
+  async function dispatch(n) {
+    if (n <= A) {
+      throw new Error("next() called multiple times");
+    }
+    A = n;
+    let i;
+    let a = false;
+    let c;
+    if (e[n]) {
+      c = e[n][0][0];
+      s.req.routeIndex = n;
+    } else {
+      c = (n === e.length && o) || void 0;
+    }
+    if (c) {
+      try {
+        i = await c(s, () => dispatch(n + 1));
+      } catch (e) {
+        if (e instanceof Error && t) {
+          s.error = e;
+          i = await t(e, s);
+          a = true;
+        } else {
+          throw e;
+        }
+      }
+    } else {
+      if (s.finalized === false && r) {
+        i = await r(s);
+      }
+    }
+    if (i && (s.finalized === false || a)) {
+      s.res = i;
+    }
+    return s;
+  }
+};
 var parseBody = async (e, t = Object.create(null)) => {
   const { all: r = false, dot: s = false } = t;
   const o = e instanceof E ? e.raw.headers : e.headers;
@@ -22352,20 +22392,21 @@ var replaceGroupMarks = (e, t) => {
   return e;
 };
 var l = {};
-var getPattern = (e) => {
+var getPattern = (e, t) => {
   if (e === "*") {
     return "*";
   }
-  const t = e.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
-  if (t) {
-    if (!l[e]) {
-      if (t[2]) {
-        l[e] = [e, t[1], new RegExp("^" + t[2] + "$")];
+  const r = e.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/);
+  if (r) {
+    const s = `${e}#${t}`;
+    if (!l[s]) {
+      if (r[2]) {
+        l[s] = t && t[0] !== ":" && t[0] !== "*" ? [s, r[1], new RegExp(`^${r[2]}(?=/${t})`)] : [e, r[1], new RegExp(`^${r[2]}$`)];
       } else {
-        l[e] = [e, t[1], true];
+        l[s] = [e, r[1], true];
       }
     }
-    return l[e];
+    return l[s];
   }
   return null;
 };
@@ -22407,30 +22448,14 @@ var getPathNoStrict = (e) => {
   const t = getPath(e);
   return t.length > 1 && t.at(-1) === "/" ? t.slice(0, -1) : t;
 };
-var mergePath = (...e) => {
-  let t = "";
-  let r = false;
-  for (let s of e) {
-    if (t.at(-1) === "/") {
-      t = t.slice(0, -1);
-      r = true;
-    }
-    if (s[0] !== "/") {
-      s = `/${s}`;
-    }
-    if (s === "/" && r) {
-      t = `${t}/`;
-    } else if (s !== "/") {
-      t = `${t}${s}`;
-    }
-    if (s === "/" && t === "") {
-      t = "/";
-    }
+var mergePath = (e, t, ...r) => {
+  if (r.length) {
+    t = mergePath(t, ...r);
   }
-  return t;
+  return `${e?.[0] === "/" ? "" : "/"}${e}${t === "/" ? "" : `${e?.at(-1) === "/" ? "" : "/"}${t?.[0] === "/" ? t.slice(1) : t}`}`;
 };
 var checkOptionalParameter = (e) => {
-  if (!e.match(/\:.+\?$/)) {
+  if (e.charCodeAt(e.length - 1) !== 63 || !e.includes(":")) {
     return null;
   }
   const t = e.split("/");
@@ -22572,7 +22597,7 @@ var E = class {
   }
   header(e) {
     if (e) {
-      return this.raw.headers.get(e.toLowerCase()) ?? void 0;
+      return this.raw.headers.get(e) ?? void 0;
     }
     const t = {};
     this.raw.headers.forEach((e, r) => {
@@ -22972,49 +22997,6 @@ var C = class {
     return this.#v(this);
   };
 };
-var compose = (e, t, r) => (s, o) => {
-  let A = -1;
-  const n = s instanceof C;
-  return dispatch(0);
-  async function dispatch(i) {
-    if (i <= A) {
-      throw new Error("next() called multiple times");
-    }
-    A = i;
-    let a;
-    let c = false;
-    let u;
-    if (e[i]) {
-      u = e[i][0][0];
-      if (n) {
-        s.req.routeIndex = i;
-      }
-    } else {
-      u = (i === e.length && o) || void 0;
-    }
-    if (!u) {
-      if (n && s.finalized === false && r) {
-        a = await r(s);
-      }
-    } else {
-      try {
-        a = await u(s, () => dispatch(i + 1));
-      } catch (e) {
-        if (e instanceof Error && n && t) {
-          s.error = e;
-          a = await t(e, s);
-          c = true;
-        } else {
-          throw e;
-        }
-      }
-    }
-    if (a && (s.finalized === false || c)) {
-      s.res = a;
-    }
-    return s;
-  }
-};
 var m = "ALL";
 var Q = "all";
 var B = ["get", "post", "put", "delete", "options", "patch"];
@@ -23082,10 +23064,9 @@ var R = class {
       });
       return this;
     };
-    const r = e.strict ?? true;
-    delete e.strict;
-    Object.assign(this, e);
-    this.getPath = r ? (e.getPath ?? getPath) : getPathNoStrict;
+    const { strict: r, ...s } = e;
+    Object.assign(this, s);
+    this.getPath = (r ?? true) ? (e.getPath ?? getPath) : getPathNoStrict;
   }
   #O() {
     const e = new R({ router: this.router, getPath: this.getPath });
@@ -23631,21 +23612,23 @@ var M = class {
     const A = [];
     for (let e = 0, t = o.length; e < t; e++) {
       const t = o[e];
-      if (Object.keys(s.#H).includes(t)) {
-        s = s.#H[t];
-        const e = getPattern(t);
+      const r = o[e + 1];
+      const n = getPattern(t, r);
+      const i = Array.isArray(n) ? n[0] : t;
+      if (Object.keys(s.#H).includes(i)) {
+        s = s.#H[i];
+        const e = getPattern(t, r);
         if (e) {
           A.push(e[1]);
         }
         continue;
       }
-      s.#H[t] = new M();
-      const r = getPattern(t);
-      if (r) {
-        s.#Z.push(r);
-        A.push(r[1]);
+      s.#H[i] = new M();
+      if (n) {
+        s.#Z.push(n);
+        A.push(n[1]);
       }
-      s = s.#H[t];
+      s = s.#H[i];
     }
     const n = Object.create(null);
     const i = { handler: r, possibleKeys: A.filter((e, t, r) => r.indexOf(e) === t), score: this.#X };
@@ -23680,61 +23663,72 @@ var M = class {
     const s = this;
     let o = [s];
     const A = splitPath(t);
+    const n = [];
     for (let t = 0, s = A.length; t < s; t++) {
-      const n = A[t];
-      const i = t === s - 1;
-      const a = [];
-      for (let s = 0, c = o.length; s < c; s++) {
-        const c = o[s];
-        const u = c.#H[n];
-        if (u) {
-          u.#$ = c.#$;
-          if (i) {
-            if (u.#H["*"]) {
-              r.push(...this.#ee(u.#H["*"], e, c.#$));
+      const i = A[t];
+      const a = t === s - 1;
+      const c = [];
+      for (let s = 0, u = o.length; s < u; s++) {
+        const u = o[s];
+        const l = u.#H[i];
+        if (l) {
+          l.#$ = u.#$;
+          if (a) {
+            if (l.#H["*"]) {
+              r.push(...this.#ee(l.#H["*"], e, u.#$));
             }
-            r.push(...this.#ee(u, e, c.#$));
+            r.push(...this.#ee(l, e, u.#$));
           } else {
-            a.push(u);
+            c.push(l);
           }
         }
-        for (let s = 0, o = c.#Z.length; s < o; s++) {
-          const o = c.#Z[s];
-          const u = c.#$ === P ? {} : { ...c.#$ };
+        for (let s = 0, o = u.#Z.length; s < o; s++) {
+          const o = u.#Z[s];
+          const l = u.#$ === P ? {} : { ...u.#$ };
           if (o === "*") {
-            const t = c.#H["*"];
+            const t = u.#H["*"];
             if (t) {
-              r.push(...this.#ee(t, e, c.#$));
-              a.push(t);
+              r.push(...this.#ee(t, e, u.#$));
+              t.#$ = l;
+              c.push(t);
             }
             continue;
           }
-          if (n === "") {
+          if (i === "") {
             continue;
           }
-          const [l, g, p] = o;
-          const E = c.#H[l];
-          const d = A.slice(t).join("/");
-          if (p instanceof RegExp && p.test(d)) {
-            u[g] = d;
-            r.push(...this.#ee(E, e, c.#$, u));
-            continue;
+          const [g, p, E] = o;
+          const d = u.#H[g];
+          const h = A.slice(t).join("/");
+          if (E instanceof RegExp) {
+            const t = E.exec(h);
+            if (t) {
+              l[p] = t[0];
+              r.push(...this.#ee(d, e, u.#$, l));
+              if (Object.keys(d.#H).length) {
+                d.#$ = l;
+                const e = t[0].match(/\//)?.length ?? 0;
+                const r = (n[e] ||= []);
+                r.push(d);
+              }
+              continue;
+            }
           }
-          if (p === true || p.test(n)) {
-            u[g] = n;
-            if (i) {
-              r.push(...this.#ee(E, e, u, c.#$));
-              if (E.#H["*"]) {
-                r.push(...this.#ee(E.#H["*"], e, u, c.#$));
+          if (E === true || E.test(i)) {
+            l[p] = i;
+            if (a) {
+              r.push(...this.#ee(d, e, l, u.#$));
+              if (d.#H["*"]) {
+                r.push(...this.#ee(d.#H["*"], e, l, u.#$));
               }
             } else {
-              E.#$ = u;
-              a.push(E);
+              d.#$ = l;
+              c.push(d);
             }
           }
         }
       }
-      o = a;
+      o = c.concat(n.shift() ?? []);
     }
     if (r.length > 1) {
       r.sort((e, t) => e.score - t.score);
@@ -23993,9 +23987,9 @@ function addQueryParameters(e, t) {
       .join("&")
   );
 }
-var X = /\{[^}]+\}/g;
+var X = /\{[^{}}]+\}/g;
 function removeNonChars(e) {
-  return e.replace(/^\W+|\W+$/g, "").split(/,/);
+  return e.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
 }
 function extractUrlVariableNames(e) {
   const t = e.match(X);
@@ -24163,7 +24157,7 @@ function parse(e) {
     }
     if (r.endsWith("/graphql")) {
       if (e.mediaType.previews?.length) {
-        const t = s.accept.match(/[\w-]+(?=-preview)/g) || [];
+        const t = s.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         s.accept = t
           .concat(e.mediaType.previews)
           .map((t) => {
@@ -24220,7 +24214,7 @@ class RequestError extends Error {
     }
     const s = Object.assign({}, r.request);
     if (r.request.headers.authorization) {
-      s.headers = Object.assign({}, r.request.headers, { authorization: r.request.headers.authorization.replace(/ .*$/, " [REDACTED]") });
+      s.headers = Object.assign({}, r.request.headers, { authorization: r.request.headers.authorization.replace(/(?<! ) .*$/, " [REDACTED]") });
     }
     s.url = s.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
     this.request = s;
@@ -24278,7 +24272,7 @@ async function fetchWrapper(e) {
   }
   const u = { url: a, status: i, headers: c, data: "" };
   if ("deprecation" in c) {
-    const t = c.link && c.link.match(/<([^>]+)>; rel="deprecation"/);
+    const t = c.link && c.link.match(/<([^<>]+)>; rel="deprecation"/);
     const s = t && t.pop();
     r.warn(`[@octokit/request] "${e.method} ${e.url}" is deprecated. It is scheduled to be removed on ${c.sunset}${s ? `. See ${s}` : ""}`);
   }
@@ -24453,7 +24447,7 @@ var Ee = function createTokenAuth2(e) {
   e = e.replace(/^(token|bearer) +/i, "");
   return Object.assign(auth.bind(null, e), { hook: hook.bind(null, e) });
 };
-const de = "6.1.3";
+const de = "6.1.4";
 const noop = () => {};
 const he = console.warn.bind(console);
 const Ie = console.error.bind(console);
@@ -24566,7 +24560,7 @@ function iterator(e, t, r) {
         try {
           const e = await o({ method: A, url: i, headers: n });
           const t = normalizePaginatedListResponse(e);
-          i = ((t.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+          i = ((t.headers.link || "").match(/<([^<>]+)>;\s*rel="next"/) || [])[1];
           return { value: t };
         } catch (e) {
           if (e.status !== 409) throw e;
@@ -31141,6 +31135,30 @@ var Bt = class _CommentHandler {
     return this._createNewComment(e, { ...c, commentId: n });
   }
 };
+function transformError(e, t) {
+  let r;
+  if (t instanceof AggregateError) {
+    r = e.logger.error(
+      t.errors
+        .map((e) => {
+          if (e instanceof a) {
+            return e.logMessage.raw;
+          } else if (e instanceof Error) {
+            return e.message;
+          } else {
+            return e;
+          }
+        })
+        .join("\n\n"),
+      { error: t }
+    );
+  } else if (t instanceof Error || t instanceof a) {
+    r = t;
+  } else {
+    r = e.logger.error(String(t));
+  }
+  return r;
+}
 var yt = {
   throttle: {
     onAbuseLimit: (e, t, r) => {
@@ -31270,12 +31288,7 @@ function createPlugin(e, t, r) {
       return t.json({ stateId: n.stateId, output: r ?? {} });
     } catch (e) {
       console.error(e);
-      let t;
-      if (e instanceof Error || e instanceof LogReturn2) {
-        t = e;
-      } else {
-        t = g.logger.error(`Error: ${e}`);
-      }
+      const t = transformError(g, e);
       if (s.postCommentOnError && t) {
         await g.commentHandler.postComment(g, t);
       }
@@ -31356,16 +31369,11 @@ async function createActionsPlugin(e, t) {
     await returnDataToKernel(s, i.stateId, t);
   } catch (e) {
     console.error(e);
-    let t;
-    if (e instanceof Error) {
-      ht.setFailed(e);
-      t = p.logger.error(`Error: ${e}`, { error: e });
-    } else if (e instanceof a) {
-      ht.setFailed(e.logMessage.raw);
-      t = e;
-    } else {
-      ht.setFailed(`Error: ${e}`);
-      t = p.logger.error(`Error: ${e}`);
+    const t = transformError(p, e);
+    if (t instanceof a) {
+      ht.setFailed(t.logMessage.diff);
+    } else if (t instanceof Error) {
+      ht.setFailed(t);
     }
     if (r.postCommentOnError && t) {
       await p.commentHandler.postComment(p, t);
@@ -31398,6 +31406,14 @@ var Tt = {
   },
 };
 var kt = Octokit.plugin(throttling, retry, paginateRest, restEndpointMethods, paginateGraphQL).defaults((e) => ({ ...Tt, ...e }));
+async function acceptCollaboratorInvitation(e, t, r) {
+  const s = new kt({ auth: r.USER_GITHUB_TOKEN });
+  const { data: o } = await s.rest.repos.listInvitationsForAuthenticatedUser();
+  const A = o.find((r) => r.repository.owner.login === e && r.repository.name === t);
+  if (A?.id) {
+    await s.rest.repos.acceptInvitationForAuthenticatedUser({ invitation_id: A.id });
+  }
+}
 async function isUserAdmin({ payload: e, octokit: t, logger: r }) {
   const s = e.sender.login;
   try {
@@ -31494,6 +31510,7 @@ async function handleInit(e) {
   });
   await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: `The first step is for me to register my wallet address to collect rewards.` });
   await r.rest.issues.createComment({ owner: n, repo: o, issue_number: A, body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd" });
+  await acceptCollaboratorInvitation(n, o, e.env);
 }
 function isCommentCreatedEvent(e) {
   return e.eventName === "issue_comment.created";
