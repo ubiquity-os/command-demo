@@ -23993,9 +23993,9 @@ function addQueryParameters(e, t) {
       .join("&")
   );
 }
-var X = /\{[^}]+\}/g;
+var X = /\{[^{}}]+\}/g;
 function removeNonChars(e) {
-  return e.replace(/^\W+|\W+$/g, "").split(/,/);
+  return e.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
 }
 function extractUrlVariableNames(e) {
   const t = e.match(X);
@@ -24163,7 +24163,7 @@ function parse(e) {
     }
     if (r.endsWith("/graphql")) {
       if (e.mediaType.previews?.length) {
-        const t = s.accept.match(/[\w-]+(?=-preview)/g) || [];
+        const t = s.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         s.accept = t
           .concat(e.mediaType.previews)
           .map((t) => {
@@ -24220,7 +24220,7 @@ class RequestError extends Error {
     }
     const s = Object.assign({}, r.request);
     if (r.request.headers.authorization) {
-      s.headers = Object.assign({}, r.request.headers, { authorization: r.request.headers.authorization.replace(/ .*$/, " [REDACTED]") });
+      s.headers = Object.assign({}, r.request.headers, { authorization: r.request.headers.authorization.replace(/(?<! ) .*$/, " [REDACTED]") });
     }
     s.url = s.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
     this.request = s;
@@ -24278,7 +24278,7 @@ async function fetchWrapper(e) {
   }
   const u = { url: a, status: i, headers: c, data: "" };
   if ("deprecation" in c) {
-    const t = c.link && c.link.match(/<([^>]+)>; rel="deprecation"/);
+    const t = c.link && c.link.match(/<([^<>]+)>; rel="deprecation"/);
     const s = t && t.pop();
     r.warn(`[@octokit/request] "${e.method} ${e.url}" is deprecated. It is scheduled to be removed on ${c.sunset}${s ? `. See ${s}` : ""}`);
   }
@@ -24453,7 +24453,7 @@ var Ee = function createTokenAuth2(e) {
   e = e.replace(/^(token|bearer) +/i, "");
   return Object.assign(auth.bind(null, e), { hook: hook.bind(null, e) });
 };
-const de = "6.1.3";
+const de = "6.1.5";
 const noop = () => {};
 const he = console.warn.bind(console);
 const Ie = console.error.bind(console);
@@ -24566,7 +24566,7 @@ function iterator(e, t, r) {
         try {
           const e = await o({ method: A, url: i, headers: n });
           const t = normalizePaginatedListResponse(e);
-          i = ((t.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+          i = ((t.headers.link || "").match(/<([^<>]+)>;\s*rel="next"/) || [])[1];
           return { value: t };
         } catch (e) {
           if (e.status !== 409) throw e;
@@ -24631,8 +24631,10 @@ var Qe = null && [
   "GET /notifications",
   "GET /organizations",
   "GET /orgs/{org}/actions/cache/usage-by-repository",
+  "GET /orgs/{org}/actions/hosted-runners",
   "GET /orgs/{org}/actions/permissions/repositories",
   "GET /orgs/{org}/actions/runner-groups",
+  "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/hosted-runners",
   "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories",
   "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners",
   "GET /orgs/{org}/actions/runners",
@@ -24685,8 +24687,10 @@ var Qe = null && [
   "GET /orgs/{org}/repos",
   "GET /orgs/{org}/rulesets",
   "GET /orgs/{org}/rulesets/rule-suites",
+  "GET /orgs/{org}/rulesets/{ruleset_id}/history",
   "GET /orgs/{org}/secret-scanning/alerts",
   "GET /orgs/{org}/security-advisories",
+  "GET /orgs/{org}/settings/network-configurations",
   "GET /orgs/{org}/team/{team_slug}/copilot/metrics",
   "GET /orgs/{org}/team/{team_slug}/copilot/usage",
   "GET /orgs/{org}/teams",
@@ -24783,6 +24787,7 @@ var Qe = null && [
   "GET /repos/{owner}/{repo}/rules/branches/{branch}",
   "GET /repos/{owner}/{repo}/rulesets",
   "GET /repos/{owner}/{repo}/rulesets/rule-suites",
+  "GET /repos/{owner}/{repo}/rulesets/{ruleset_id}/history",
   "GET /repos/{owner}/{repo}/secret-scanning/alerts",
   "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations",
   "GET /repos/{owner}/{repo}/security-advisories",
@@ -26055,7 +26060,7 @@ async function requestWithGraphqlErrorHandling(e, t, r, s) {
   return o;
 }
 function retry(e, t) {
-  const r = Object.assign({ enabled: true, retryAfterBaseValue: 1e3, doNotRetry: [400, 401, 403, 404, 422, 451], retries: 3 }, t.retry);
+  const r = Object.assign({ enabled: true, retryAfterBaseValue: 1e3, doNotRetry: [400, 401, 403, 404, 410, 422, 451], retries: 3 }, t.retry);
   if (r.enabled) {
     e.hook.error("request", errorRequest.bind(null, r, e));
     e.hook.wrap("request", wrapRequest.bind(null, r, e));
@@ -31141,6 +31146,30 @@ var Bt = class _CommentHandler {
     return this._createNewComment(e, { ...c, commentId: n });
   }
 };
+function transformError(e, t) {
+  let r;
+  if (t instanceof AggregateError) {
+    r = e.logger.error(
+      t.errors
+        .map((e) => {
+          if (e instanceof a) {
+            return e.logMessage.raw;
+          } else if (e instanceof Error) {
+            return e.message;
+          } else {
+            return e;
+          }
+        })
+        .join("\n\n"),
+      { error: t }
+    );
+  } else if (t instanceof Error || t instanceof a) {
+    r = t;
+  } else {
+    r = e.logger.error(String(t));
+  }
+  return r;
+}
 var yt = {
   throttle: {
     onAbuseLimit: (e, t, r) => {
@@ -31270,12 +31299,7 @@ function createPlugin(e, t, r) {
       return t.json({ stateId: n.stateId, output: r ?? {} });
     } catch (e) {
       console.error(e);
-      let t;
-      if (e instanceof Error || e instanceof LogReturn2) {
-        t = e;
-      } else {
-        t = g.logger.error(`Error: ${e}`);
-      }
+      const t = transformError(g, e);
       if (s.postCommentOnError && t) {
         await g.commentHandler.postComment(g, t);
       }
@@ -31356,16 +31380,11 @@ async function createActionsPlugin(e, t) {
     await returnDataToKernel(s, i.stateId, t);
   } catch (e) {
     console.error(e);
-    let t;
-    if (e instanceof Error) {
-      ht.setFailed(e);
-      t = p.logger.error(`Error: ${e}`, { error: e });
-    } else if (e instanceof a) {
-      ht.setFailed(e.logMessage.raw);
-      t = e;
-    } else {
-      ht.setFailed(`Error: ${e}`);
-      t = p.logger.error(`Error: ${e}`);
+    const t = transformError(p, e);
+    if (t instanceof a) {
+      ht.setFailed(t.logMessage.diff);
+    } else if (t instanceof Error) {
+      ht.setFailed(t);
     }
     if (r.postCommentOnError && t) {
       await p.commentHandler.postComment(p, t);
@@ -31417,13 +31436,6 @@ async function isUserAdmin({ payload: e, octokit: t, logger: r }) {
     data: o.data,
   });
   return !!o.data.user?.permissions?.admin;
-}
-async function setLabels({ payload: e, octokit: t }) {
-  const r = e.repository.name;
-  const s = e.issue.number;
-  const o = e.repository.owner.login;
-  await t.rest.issues.removeAllLabels({ owner: o, repo: r, issue_number: s });
-  await t.rest.issues.addLabels({ owner: o, repo: r, issue_number: s, labels: ["Priority: 1 (Normal)", "Time: <1 Hour"] });
 }
 async function openIssue({ octokit: e, payload: t }) {
   const r = t.repository.name;
