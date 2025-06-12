@@ -1,4 +1,4 @@
-import { Context } from "../types";
+import { Context } from "../types/index";
 
 async function isUserAdmin({ payload, octokit, logger }: Context) {
   const username = payload.sender.login;
