@@ -16,6 +16,7 @@ jobs:
 
     steps:
       - uses: ubiquity-os/deno-plugin-adapter@main
+        id: adapter
         with:
           pluginEntry: "./src/worker.ts"
       - uses: ubiquity-os/deno-deploy@main
@@ -29,4 +30,4 @@ jobs:
           token: ${{ secrets.DENO_DEPLOY_TOKEN }}
           action: ${{ github.event_name == 'delete' && 'delete' || 'deploy' }}
           organization: ${{ secrets.DENO_ORG_NAME }}
-          entrypoint: "src/deno.ts"
+          entrypoint: ${{ steps.adapter.outputs.entrypoint }}
