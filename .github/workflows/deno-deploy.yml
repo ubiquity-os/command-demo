@@ -18,7 +18,7 @@ jobs:
       - uses: ubiquity-os/deno-plugin-adapter@main
         id: adapter
         with:
-          pluginEntry: "./src/worker.ts"
+          pluginEntry: "./worker.ts"
       - uses: ubiquity-os/deno-deploy@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
