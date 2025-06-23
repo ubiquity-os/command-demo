@@ -15,6 +15,9 @@ jobs:
       id-token: write
 
     steps:
+      - uses: ubiquity-os/deno-plugin-adapter@main
+        with:
+          pluginEntry: "./worker"
       - uses: ubiquity-os/deno-deploy@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
