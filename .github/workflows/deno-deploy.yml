@@ -15,6 +15,7 @@ jobs:
       id-token: write
 
     steps:
+      - uses: actions/checkout@v4
       - uses: ubiquity-os/deno-plugin-adapter@main
         id: adapter
         with:
