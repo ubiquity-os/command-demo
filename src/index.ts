@@ -1,6 +1,6 @@
 import { customOctokit } from "@ubiquity-os/plugin-sdk/octokit";
 import { handleCommentCreated, handleCommentEdited } from "./handlers/run-demo";
-import { Context } from "./types";
+import { Context } from "./types/index";
 import { isCommentCreatedEvent, isCommentEditedEvent } from "./types/typeguards";
 
 export async function runPlugin(context: Context) {

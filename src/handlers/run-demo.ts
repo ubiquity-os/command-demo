@@ -1,4 +1,4 @@
-import { Context } from "../types";
+import { Context } from "../types/index";
 
 async function isUserAdmin({ payload, octokit, logger }: Context) {
   const username = payload.sender.login;
@@ -28,22 +28,22 @@ async function isUserAdmin({ payload, octokit, logger }: Context) {
   return !!permissionLevel.data.user?.permissions?.admin;
 }
 
-async function setLabels({ payload, octokit }: Context) {
-  const repo = payload.repository.name;
-  const issueNumber = payload.issue.number;
-  const owner = payload.repository.owner.login;
-  await octokit.rest.issues.removeAllLabels({
-    owner,
-    repo,
-    issue_number: issueNumber,
-  });
-  await octokit.rest.issues.addLabels({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    labels: ["Priority: 1 (Normal)", "Time: <1 Hour"],
-  });
-}
+// async function setLabels({ payload, octokit }: Context) {
+//   const repo = payload.repository.name;
+//   const issueNumber = payload.issue.number;
+//   const owner = payload.repository.owner.login;
+//   await octokit.rest.issues.removeAllLabels({
+//     owner,
+//     repo,
+//     issue_number: issueNumber,
+//   });
+//   await octokit.rest.issues.addLabels({
+//     owner,
+//     repo,
+//     issue_number: issueNumber,
+//     labels: ["Priority: 1 (Normal)", "Time: <1 Hour"],
+//   });
+// }
 
 async function openIssue({ octokit, payload }: Context): Promise<void> {
   const repo = payload.repository.name;
