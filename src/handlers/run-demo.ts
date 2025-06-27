@@ -174,7 +174,7 @@ export async function handleCommentCreated(context: Context<"issue_comment.creat
     logger.info("Processing /demo command");
     await openIssue(context);
     await handleInit(context);
-  } else if (body.includes("ubiquity-os-command-start-stop") && body.includes(userName)) {
+  } else if (body.includes("command-start-stop") && body.includes(userName)) {
     logger.info("Processing ubiquity-os-command-start-stop post comment");
     const pr = await createPullRequest(context);
     await octokit.rest.pulls.merge({
@@ -182,7 +182,7 @@ export async function handleCommentCreated(context: Context<"issue_comment.creat
       repo,
       pull_number: pr.data.number,
     });
-  } else if (body.includes("ubiquity-os-command-wallet") && body.includes(userName)) {
+  } else if (body.includes("command-wallet") && body.includes(userName)) {
     await userOctokit.rest.issues.createComment({
       owner,
       repo,
