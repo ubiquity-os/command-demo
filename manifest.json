@@ -1,11 +1,7 @@
 {
   "name": "plugin-demo",
   "description": "Triggers a demo of the plugin capabilities.",
-  "ubiquity:listeners": [
-    "issue_comment.created",
-    "issue_comment.edited",
-    "issues.labeled"
-  ],
+  "ubiquity:listeners": ["issue_comment.created", "issue_comment.edited", "issues.labeled"],
   "skipBotEvents": false,
   "configuration": {
     "default": {},
