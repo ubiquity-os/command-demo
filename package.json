@@ -32,11 +32,11 @@
     "open-source"
   ],
   "dependencies": {
-    "@sinclair/typebox": "0.34.15",
-    "@ubiquity-os/plugin-sdk": "^3.1.4",
+    "@sinclair/typebox": "0.34.41",
+    "@ubiquity-os/plugin-sdk": "^3.8.1",
     "@ubiquity-os/ubiquity-os-logger": "^1.4.0",
     "dotenv": "16.4.7",
-    "hono": "^4.6.19",
+    "hono": "^4.11.3",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
@@ -81,5 +81,8 @@
     "extends": [
       "@commitlint/config-conventional"
     ]
+  },
+  "resolutions": {
+    "@sinclair/typebox": "0.34.41"
   }
 }
