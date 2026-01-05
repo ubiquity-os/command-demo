@@ -3,7 +3,7 @@ import { handleCommentCreated, handleCommentEdited } from "./handlers/run-demo";
 import { Context } from "./types/index";
 import { isCommentCreatedEvent, isCommentEditedEvent } from "./types/typeguards";
 
-const BAD_CREDENTIALS_MESSAGE = " The credentials provided for the GitHub user are invalid, the demo cannot proceed.";
+const BAD_CREDENTIALS_MESSAGE = "The credentials provided for the GitHub user are invalid, the demo cannot proceed.";
 
 export async function runPlugin(context: Context) {
   const { logger, eventName } = context;
