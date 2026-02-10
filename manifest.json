@@ -1,13 +1,13 @@
 {
-  "name": "plugin-template",
-  "short_name": "ubiquity-os/command-demo@codex/fix/manifest-build",
-  "description": "Ubiquity-os demo plugin.",
-  "ubiquity:listeners": ["issue_comment.edited", "issue_comment.created", "issues.labeled"],
-  "skipBotEvents": true,
+  "name": "plugin-demo",
+  "description": "Triggers a demo of the plugin capabilities.",
+  "ubiquity:listeners": ["issue_comment.created", "issue_comment.edited", "issues.labeled"],
+  "skipBotEvents": false,
   "configuration": {
     "default": {},
     "type": "object",
     "properties": {}
   },
-  "homepage_url": "https://command-demo-demo.deno.dev"
+  "homepage_url": "https://command-demo-codex-fix-man.deno.dev",
+  "short_name": "ubiquity-os/command-demo@development"
 }
