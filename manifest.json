@@ -1,8 +1,8 @@
 {
   "name": "plugin-template",
-  "short_name": "ubiquity-os/command-demo@codex/fix/manifest-build-plugin-demo",
+  "short_name": "ubiquity-os/command-demo@demo",
   "description": "Ubiquity-os demo plugin.",
-  "ubiquity:listeners": ["issue_comment.edited", "issue_comment.edited", "issues.labeled"],
+  "ubiquity:listeners": ["issue_comment.edited", "issue_comment.created", "issues.labeled"],
   "skipBotEvents": false,
   "configuration": {
     "default": {},
