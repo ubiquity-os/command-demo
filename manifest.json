@@ -1,9 +1,8 @@
 {
-  "name": "plugin-template",
-  "short_name": "ubiquity-os/command-demo@main",
-  "description": "Ubiquity-os demo plugin.",
-  "ubiquity:listeners": ["issue_comment.edited", "issue_comment.created", "issues.labeled"],
-  "skipBotEvents": true,
+  "name": "plugin-demo",
+  "description": "Triggers a demo of the plugin capabilities.",
+  "ubiquity:listeners": ["issue_comment.created", "issue_comment.edited", "issues.labeled"],
+  "skipBotEvents": false,
   "configuration": {
     "default": {},
     "type": "object",
