@@ -1,15 +1,17 @@
 {
   "name": "plugin-template",
-  "short_name": "ubiquity-os/command-demo@feat/320-workflow-artifact-migration",
+  "short_name": "local/command-demo@local",
   "description": "Ubiquity-os demo plugin.",
   "ubiquity:listeners": [
     "issue_comment.edited",
+    "issue_comment.created",
     "issues.labeled"
   ],
-  "skipBotEvents": false,
+  "skipBotEvents": true,
   "configuration": {
     "default": {},
     "type": "object",
     "properties": {}
-  }
+  },
+  "homepage_url": "https://command-demo-feat-320-work.deno.dev"
 }
