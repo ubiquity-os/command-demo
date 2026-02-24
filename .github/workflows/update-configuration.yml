@@ -3,6 +3,7 @@ name: "Update Configuration and Build"
 on:
   workflow_dispatch:
   push:
+  delete:
 
 jobs:
   update:
@@ -11,11 +12,16 @@ jobs:
     permissions: write-all
 
     steps:
-      - uses: ubiquity-os/action-deploy-plugin@main
+      - uses: ubiquity-os/action-deploy-plugin@feat/320-dist-artifact-branches
         with:
+          action: ${{ github.event_name == 'delete' && 'delete' || 'publish' }}
+          sourceRef: ${{ github.ref_name }}
+          artifactPrefix: dist/
           treatAsEsm: true
           sourcemap: false
           pluginEntry: "${{ github.workspace }}/src/action.ts"
+          skipBotEvents: false
+          excludeSupportedEvents: "issue_comment.created"
         env:
           APP_ID: ${{ secrets.APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}

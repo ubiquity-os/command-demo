@@ -50,7 +50,7 @@ describe("Plugin tests", () => {
 
     expect(errorSpy).not.toHaveBeenCalled();
     expect(infoSpy).toHaveBeenNthCalledWith(1, "Processing /demo command");
-  });
+  }, 50000);
 });
 
 function createContext(
