@@ -28,6 +28,12 @@ export const handlers = [
   http.patch("https://api.github.com/repos/:org/:repo/issues/:id", () => HttpResponse.json()),
   http.delete("https://api.github.com/repos/:org/:repo/issues/:id/labels", () => HttpResponse.json()),
   http.post("https://api.github.com/repos/:org/:repo/issues/:id/labels", () => HttpResponse.json()),
+  // list labels on issue
+  http.get("https://api.github.com/repos/:owner/:repo/issues/:issue_number/labels", () =>
+    HttpResponse.json([{ name: "Price: 25 USD" }, { name: "Time: <1 Hour" }])
+  ),
+  // set labels on issue
+  http.put("https://api.github.com/repos/:owner/:repo/issues/:issue_number/labels", () => HttpResponse.json()),
   // get repo
   http.get("https://api.github.com/repos/:owner/:repo", ({ params: { owner, repo } }: { params: { owner: string; repo: string } }) => {
     const item = db.repo.findFirst({ where: { name: { equals: repo }, owner: { login: { equals: owner } } } });
