@@ -8,6 +8,6 @@ export function isCommentEditedEvent(context: Context): context is Context<"issu
   return context.eventName === "issue_comment.edited";
 }
 
-export function isLabelEvent(context: Context): context is Context<"issues.labeled"> {
+export function isIssuesLabeledEvent(context: Context): context is Context<"issues.labeled"> {
   return context.eventName === "issues.labeled";
 }
