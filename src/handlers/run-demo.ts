@@ -1,5 +1,9 @@
 import { Context } from "../types/index";
 
+const DEMO_CURRENCY_NAME = "DEMO";
+const DEMO_WALLET_ADDRESS = "0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd";
+const CLAIM_BASE_URL = "https://pay.ubq.fi";
+
 async function isUserAdmin({ payload, octokit, logger }: Context) {
   const username = payload.sender.login;
   try {
@@ -26,6 +30,18 @@ async function isUserAdmin({ payload, octokit, logger }: Context) {
     data: permissionLevel.data,
   });
   return !!permissionLevel.data.user?.permissions?.admin;
+}
+
+async function setLabels({ payload, octokit }: Context): Promise<void> {
+  const repo = payload.repository.name;
+  const issueNumber = payload.issue.number;
+  const owner = payload.repository.owner.login;
+  await octokit.rest.issues.setLabels({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    labels: ["Priority: 1 (Normal)", "Time: <1 Hour", "Price: 150 USD"],
+  });
 }
 
 // async function setLabels({ payload, octokit }: Context) {
@@ -173,6 +189,7 @@ export async function handleCommentCreated(context: Context<"issue_comment.creat
     }
     logger.info("Processing /demo command");
     await openIssue(context);
+    await setLabels(context);
     await handleInit(context);
   } else if (body.includes("command-start-stop") && body.includes(userName)) {
     logger.info("Processing ubiquity-os-command-start-stop post comment");
@@ -201,6 +218,9 @@ When pricing is set on any GitHub Issue, they will be automatically populated in
       issue_number: issueNumber,
       body: `/start`,
     });
+  } else if (body.includes("command-start-stop") && body.includes(userName) && body.includes("Permit")) {
+    logger.info("Processing rewards generation, posting claim nudge");
+    await postClaimNudge(context);
   }
 }
 
@@ -210,17 +230,32 @@ export async function handleCommentEdited(context: Context<"issue_comment.edited
   const body = payload.comment.body;
 
   if (eventName === "issue_comment.edited" && body.includes("ubiquity-os-marketplace/text-conversation-rewards")) {
-    /*await userOctokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: issueNumber,
-      body: `/ask How can I redeem my rewards? Can you tell me step by step?`,
-    });*/
+    // handled in handleCommentCreated via Permit detection
   }
 }
 
+async function postClaimNudge(context: Context<"issue_comment.created">) {
+  const { payload, octokit, logger } = context;
+  const owner = payload.repository.owner.login;
+  const repo = payload.repository.name;
+  const issueNumber = payload.issue.number;
+
+  logger.info("Posting claim nudge for DEMO currency");
+
+  await octokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    body: `🎉 **Your ${DEMO_CURRENCY_NAME} currency rewards have been generated!**
+
+👉 [Click here to claim your reward](${CLAIM_BASE_URL})
+
+You'll be able to claim your ${DEMO_CURRENCY_NAME} tokens using the wallet address you registered earlier. If you haven't registered yet, please use the \`/wallet\` command first.`,
+  });
+}
+
 export async function handleInit(context: Context<"issue_comment.created">) {
-  const { payload, userOctokit, logger } = context;
+  const { payload, octokit, logger } = context;
 
   const repo = payload.repository.name;
   const issueNumber = payload.issue.number;
@@ -228,33 +263,54 @@ export async function handleInit(context: Context<"issue_comment.created">) {
 
   logger.info("Starting demo", { owner, repo, issueNumber });
 
-  await userOctokit.rest.issues.createComment({
+  // Simulant (bot) posts the welcome message instead of the user for privacy
+  await octokit.rest.issues.createComment({
     owner,
     repo,
     issue_number: issueNumber,
-    body: `Hey there @${payload.repository.owner.login}, and welcome! This interactive demo highlights how UbiquityOS streamlines development workflows. Here’s what you can expect:
+    body: `Hey there @${payload.sender.login}, and welcome! This interactive demo highlights how UbiquityOS streamlines development workflows. Here's what you can expect:
 
 - All functions are installable from our @ubiquity-os-marketplace, letting you tailor your management configurations for any organization or repository.
-- We’ll walk you through key capabilities—AI-powered task matching, automated pricing calculations, and smart contract integration for payments.
-- Adjust settings globally across your org or use local repo overrides. More details on repository config can be found [here](https://github.com/0x4007/ubiquity-os-demo-kljiu/blob/development/.github/.ubiquity-os.config.yml).
+- We'll walk you through key capabilities—AI-powered task matching, automated pricing calculations, and smart contract integration for payments.
+- Adjust settings globally across your org or use local repo overrides. More details on repository config can be found [here](https://github.com/0x4007/ubiquity-os-demo-kljiu/blob/development/.ubiquity-os.config.yml).
 
 ### Getting Started
 - Try out the commands you see. Feel free to experiment with different tasks and features.
 - Create a [new issue](new) at any time to reset and begin anew.
-- Use \`/help\` if you’d like to see additional commands.
+- Use \`/help\` if you'd like to see additional commands.
 
 Enjoy the tour!`,
   });
-  await userOctokit.rest.issues.createComment({
+
+  // Prompt user to register wallet before proceeding with the demo
+  await octokit.rest.issues.createComment({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    body: `### 🔑 Wallet Registration Required
+
+Before we begin, you'll need to register your wallet address to collect **${DEMO_CURRENCY_NAME} currency** rewards. This is required so that you can claim your earnings after completing tasks.
+
+Please use the \`/wallet\` command with your wallet address like so:
+
+code}
+/wallet YOUR_WALLET_ADDRESS
+code}
+
+> **Why register?** Your rewards will be paid in ${DEMO_CURRENCY_NAME} tokens. Without a registered wallet, you won't be able to claim them.`,
+  });
+
+  // Simulant posts the wallet registration on behalf of the user
+  await octokit.rest.issues.createComment({
     owner,
     repo,
     issue_number: issueNumber,
     body: `The first step is for me to register my wallet address to collect rewards.`,
   });
-  await userOctokit.rest.issues.createComment({
+  await octokit.rest.issues.createComment({
     owner,
     repo,
     issue_number: issueNumber,
-    body: "/wallet 0xefC0e701A824943b469a694aC564Aa1efF7Ab7dd",
+    body: `/wallet ${DEMO_WALLET_ADDRESS}`,
   });
 }
