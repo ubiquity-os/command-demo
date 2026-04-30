@@ -1,4 +1,8 @@
 {
   "greeting": "Hello user",
-  "taskAssignment": "You've been assigned to the task"
+  "taskAssignment": "You've been assigned to the task",
+  "walletRequiredBeforeDemo": "Before we begin the demo, please register your wallet address so you can claim rewards. Use the command: `/wallet <your-eth-address>`. Once registered, I'll guide you through the interactive demo!",
+  "nudgeClaimRewards": "Great news! You've earned **{{amount}}** in rewards! Please click the link below to claim your reward: [Click here to claim your reward](https://devpool.directory/rewards). If you haven't registered your wallet yet, please do so first using `/wallet <your-address>`, then return here to claim.",
+  "welcomeMessage": "Hey there @{{owner}}, and welcome! This interactive demo highlights how UbiquityOS streamlines development workflows.",
+  "walletImportantNote": "**Important:** Before starting the demo tasks, please register your wallet address using `/wallet <your-eth-address>` so you can claim your rewards when you complete tasks!"
 }
